@@ -1,0 +1,20 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # # Redirect HTTP to HTTPS
+    RewriteCond %{SERVER_PORT} !^443$
+
+    RewriteRule .* https://%{SERVER_NAME}%{REQUEST_URI} [R=301,L]
+
+    # Redirect all requests to the 'public' folder
+    RewriteCond %{REQUEST_URI} !^public
+    RewriteRule ^(.*)$ public/$1 [L]
+
+    # Ensure that requests to 'storage' are correctly routed
+    RewriteRule ^storage/(.*)$ /storage/$1 [L]
+
+    # Custom error handling - redirect to home page on errors
+    ErrorDocument 404 /home
+    ErrorDocument 500 /home
+    ErrorDocument 403 /home
+</IfModule>

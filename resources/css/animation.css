@@ -1,0 +1,208 @@
+.main__ponel:hover {
+}
+
+.button:hover {
+    background: rgb(1, 172, 255) !important;
+}
+
+.brif:hover {
+    cursor: pointer;
+}
+
+a, button {
+    cursor: pointer;
+}
+
+.completed {
+    
+    color: var(--blue) !important;
+}
+
+.body__tt {
+    margin-bottom: 20px;
+}
+
+
+button:hover img {
+    -webkit-transition: 0.5s;
+    -o-transition: 0.5s;
+    transition: 0.5s;
+    
+}
+
+.main__ponel.collapsed .ponel__ul li button:hover {
+    -webkit-transition: 0.5s;
+    -o-transition: 0.5s;
+    transition: 0.5s;
+    color: rgb(255, 255, 255);
+    
+}
+
+.main__ponel.collapsed .ponel__ul li button:hover span {
+    color: rgb(255, 255, 255) !important;
+}
+
+.ponel__ul li button:hover {
+    color: rgb(255, 255, 255) !important;
+}
+
+.ponel__ul li button:hover span {
+    
+}
+
+.news-item:hover {
+    -webkit-transition: 0.5s;
+    -o-transition: 0.5s;
+    transition: 0.5s;
+}
+
+.brif:hover {
+    -webkit-transition: 0.5s;
+    -o-transition: 0.5s;
+    transition: 0.5s;
+    background: rgb(246, 252, 255);
+}
+
+button:hover {
+    background: linear-gradient(51deg, #01ACFF 100%, #0381BE 0%) !important;
+}
+
+button.active_Btn {
+    
+}
+
+button.active_Btn span {
+    color: rgb(255, 255, 255) !important;
+}
+
+button.active_Btn img {
+    
+    
+}
+
+
+.button:hover {
+    background: rgb(1, 172, 255) !important;
+}
+
+.brif:hover {
+    cursor: pointer;
+}
+    a, button {
+    cursor: pointer;
+}
+
+.completed {
+    
+    color: var(--blue) !important;
+}
+
+.body__tt {
+    margin-bottom: 20px;
+}
+
+
+.radio {
+    position: relative;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-align: center;
+    -ms-flex-align: center;
+    align-items: center;
+    cursor: pointer;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+
+.radio
+    label {
+    margin: 0px;
+    width: 100%;
+    font-size: 16px;
+    padding: var(--p20) 20px 20px 50px;
+    -webkit-transition: color 0.3s;
+    border-radius: var(--radius);
+    -o-transition: color 0.3s;
+    font-family: Onest;
+    font-weight: 400;
+    font-size: 20px;
+    line-height: 25.5px;
+    letter-spacing: 0%;
+    transition: color 0.3s;
+    background: var(--fff);
+}
+
+
+
+.main__ponel.collapsed .ponel__ul
+    li button:hover {
+    -webkit-transition: 0.5s;
+    -o-transition: 0.5s;
+    transition: 0.5s;
+    color: rgb(255, 255, 255);
+    
+}
+
+.main__ponel.collapsed .ponel__ul
+    li button:hover span {
+    color: rgb(255, 255, 255) !important;
+}
+
+.ponel__ul
+    li button:hover {
+    color: rgb(255, 255, 255) !important;
+}
+
+.ponel__ul
+    li button:hover span {
+    
+}
+
+.news-item:hover {
+    -webkit-transition: 0.5s;
+    -o-transition: 0.5s;
+    transition: 0.5s;
+}
+
+.brif:hover {
+    -webkit-transition: 0.5s;
+    -o-transition: 0.5s;
+    transition: 0.5s;
+    background: rgb(246, 252, 255);
+    
+}
+    button:hover {
+    background: linear-gradient(51deg, #01ACFF 100%, #0381BE 0%) !important;
+}
+    button.active_Btn {
+    }
+    button.active_Btn span {
+    color: rgb(255, 255, 255) !important;
+}
+    button.active_Btn img {
+    
+    
+}
+    button.active_Btn {
+    
+    background: linear-gradient(51deg, #01ACFF 0%, #0381BE 100%) !important;
+};
+.checkpoint.flex.wrap {
+    width: 31%;
+}
+
+.radio {
+    width: 100%;
+}
+
+button.active_Btn {
+    
+    background: linear-gradient(51deg, #01ACFF 0%, #0381BE 100%) !important;
+}
+.button__variate2:hover {
+    background: var(--fff) !IMPORTANT;
+}

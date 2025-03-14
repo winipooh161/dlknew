@@ -1,0 +1,92 @@
+.pin-logs {
+    background: #f5f5f5;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 5px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.pin-log-entry {
+    padding: 5px;
+    border-bottom: 1px solid #eee;
+    font-size: 12px;
+    color: #666;
+}
+
+.pin-log-user {
+    font-weight: bold;
+    color: #333;
+}
+
+.pin-log-message {
+    font-style: italic;
+}
+
+.pin-log-time {
+    color: #999;
+    font-size: 11px;
+    margin-left: 5px;
+}
+
+.pin-controls {
+    display: inline-flex;
+    margin-left: 5px;
+}
+
+.pinned-notification {
+    display: block;
+    background-color: #f0f8ff;
+    padding: 10px;
+    border-radius: 5px;
+    text-decoration: none;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.pinned-notification:hover {
+    background-color: #e0f0ff;
+    text-decoration: underline;
+}
+
+.notification-message {
+    background-color: #f0f7ff;
+    border-left: 3px solid #3490dc;
+    margin: 5px 0;
+    padding: 8px 12px;
+}
+
+.notification-message a {
+    color: #3490dc;
+    text-decoration: none;
+}
+
+.notification-message a:hover {
+    text-decoration: underline;
+}
+
+.system-notification {
+    background-color: #f0f7ff;
+    border-left: 3px solid #3490dc;
+    margin: 10px 0;
+    padding: 8px 12px;
+    position: relative;
+    list-style: none;
+}
+
+.system-notification a {
+    color: #3490dc;
+    text-decoration: none;
+}
+
+.system-notification a:hover {
+    text-decoration: underline;
+}
+
+.system-notification .message-time {
+    position: absolute;
+    right: 8px;
+    top: 8px;
+    color: #666;
+    font-size: 0.8em;
+}
