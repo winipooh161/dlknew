@@ -356,3 +356,11 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+
+</div>
+    <!-- Modal content -->
+        <span class="close">&times;</span>
+        <p>Текст для модального окна.</p>
+        <!-- Пример ссылки с передачей параметра token -->
+        <a href="{{ route('register_by_deal', ['token' => $deal->token ?? 'missing_token']) }}">Зарегистрироваться по сделке</a>
+    </div>

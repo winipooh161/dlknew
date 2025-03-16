@@ -23,12 +23,12 @@ import { getMessaging, onMessage } from 'firebase/messaging';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-    apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyB6N1n8dW95YGMMuTsZMRnJY1En7lK2s2M',
-    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'dlk-diz.firebaseapp.com',
-    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'dlk-diz.firebasestorage.app',
-    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'dlk-diz.firebasestorage.app',
-    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '209164982906',
-    appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:209164982906:web:0836fbb02e7effd80679c3',
+    apiKey: "AIzaSyB6N1n8dW95YGMMuTsZMRnJY1En7lK2s2M",
+    authDomain: "dlk-diz.firebaseapp.com",
+    projectId: "dlk-diz",
+    storageBucket: "dlk-diz.firebasestorage.app",
+    messagingSenderId: "209164982906",
+    appId: "1:209164982906:web:0836fbb02e7effd80679c3"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -56,8 +56,10 @@ window.addEventListener('error', function(event) {
     }
 });
 
-// Оборачиваем fetch-запросы в блок обработки ошибок и добавляем проверку статуса ответа.
-if (typeof url !== 'undefined' && typeof data !== 'undefined') {
+// Перед выполнением fetch проверяем, что переменные url и data определены
+if (typeof url === 'undefined' || typeof data === 'undefined') {
+    console.error("Переменные url или data не определены для fetch.");
+} else {
     fetch(url, {
         method: 'POST',
         credentials: 'same-origin',
@@ -79,6 +81,4 @@ if (typeof url !== 'undefined' && typeof data !== 'undefined') {
     .catch(error => {
         console.error('Ошибка в POST запросе:', error);
     });
-} else {
-    console.error('Переменные url или data не определены для fetch.');
 }

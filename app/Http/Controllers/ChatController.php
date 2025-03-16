@@ -16,7 +16,6 @@ use App\Events\UserTyping; // Добавляем импорт класса
 use App\Http\Resources\MessageResource;
 use Illuminate\Support\Str; // Добавляем импорт класса
 use Illuminate\Support\Facades\Http; // Добавляем импорт класса
-use Illuminate\Support\Facades\Cache; // Добавлено
 use Illuminate\Support\Facades\Schema; // Добавляем импорт класса
 use App\Services\ChatService; // Добавляем импорт класса
 use App\Services\MessageService; // Добавляем импорт класса
@@ -132,25 +131,32 @@ class ChatController extends Controller
     public function sendMessage(SendMessageRequest $request, $type, $id)
     {
         try {
+            Log::info('Начало отправки сообщения', [
+                'type' => $type,
+                'id' => $id,
+                'request' => $request->all(),
+            ]);
             $message = $this->messageService->sendMessage($request, $type, $id);
             $user = Auth::user();
             $chat = ($type === 'group') ? Chat::find($id) : null;
             $chatName = ($type === 'group' && $chat) ? $chat->name : $user->name;
             broadcast(new MessageSent($message, [
-                'user_id' => $user->id,
+                'user_id'   => $user->id,
                 'user_name' => $user->name,
-                'chat_id' => $id,
+                'chat_id'   => $id,
                 'chat_type' => $type,
                 'chat_name' => $chatName,
             ]))->toOthers();
 
-            // Можно расширить данные ответа для будущих настроек
             return $this->prepareChatResponse(['message' => new MessageResource($message)], 201);
         } catch (\Exception $e) {
             Log::error('Ошибка при отправке сообщения: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
+                'type' => $type,
+                'id' => $id,
+                'request' => $request->all(),
             ]);
-            return $this->prepareChatResponse(['error' => 'Internal Server Error'], 500);
+            return $this->prepareChatResponse(['error' => 'Ошибка при отправке сообщения: ' . $e->getMessage()], 500);
         }
     }
 
@@ -304,26 +310,24 @@ class ChatController extends Controller
         $userId = Auth::id();
 
         try {
-            $unreadCounts = Cache::remember("unread_counts_{$userId}", now()->addMinutes(2), function () use ($userId) {
-                $personalUnreadCount = Message::where('receiver_id', $userId)
-                    ->where('is_read', false)
+            $personalUnreadCount = Message::where('receiver_id', $userId)
+                ->where('is_read', false)
+                ->count();
+
+            $groupUnreadCount = 0;
+            if (Schema::hasTable('chat_user')) {
+                $groupUnreadCount = DB::table('chat_user')
+                    ->join('messages', 'chat_user.chat_id', '=', 'messages.chat_id')
+                    ->where('chat_user.user_id', $userId)
+                    ->where('messages.sender_id', '!=', $userId)
+                    ->where('messages.is_read', false)
                     ->count();
+            }
 
-                $groupUnreadCount = 0;
-                if (Schema::hasTable('chat_user')) {
-                    $groupUnreadCount = DB::table('chat_user')
-                        ->join('messages', 'chat_user.chat_id', '=', 'messages.chat_id')
-                        ->where('chat_user.user_id', $userId)
-                        ->where('messages.sender_id', '!=', $userId)
-                        ->where('messages.is_read', false)
-                        ->count();
-                }
-
-                return [
-                    'personal' => $personalUnreadCount,
-                    'group' => $groupUnreadCount,
-                ];
-            });
+            $unreadCounts = [
+                'personal' => $personalUnreadCount,
+                'group' => $groupUnreadCount,
+            ];
 
             return response()->json($unreadCounts);
         } catch (\Exception $e) {
@@ -397,7 +401,10 @@ class ChatController extends Controller
     public function deleteMessage($messageId)
     {
         try {
-            $message = Message::findOrFail($messageId);
+            $message = Message::find($messageId); // используем find вместо findOrFail
+            if (!$message) {
+                return response()->json(['error' => 'Сообщение не найдено.'], 404);
+            }
             $message->delete();
             return response()->json(['success' => 'Сообщение удалено.'], 200);
         } catch (\Exception $e) {

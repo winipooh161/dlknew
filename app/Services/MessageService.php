@@ -14,6 +14,7 @@ use App\Events\MessageSent;
 use App\Http\Requests\Chat\SendMessageRequest;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class MessageService
 {
@@ -31,7 +32,7 @@ class MessageService
         if ($type === 'personal') {
             $otherUser = User::findOrFail($id);
             
-            return Message::where(function ($q) use ($otherUser, $currentUserId) {
+            $messages = Message::where(function ($q) use ($otherUser, $currentUserId) {
                     $q->where('sender_id', $currentUserId)
                       ->where('receiver_id', $otherUser->id);
                 })
@@ -42,6 +43,9 @@ class MessageService
                 ->orderBy('created_at', 'desc')
                 ->with('sender')
                 ->paginate($perPage);
+            // Изменено: сортировка сообщений по возрастанию времени создания
+            $messages->setCollection($messages->getCollection()->sortBy('created_at'));
+            return $messages;
         } elseif ($type === 'group') {
             $chat = Chat::where('type', 'group')->findOrFail($id);
             
@@ -50,92 +54,104 @@ class MessageService
                 $chat->users()->attach($currentUserId);
             }
             
-            return Message::where('chat_id', $chat->id)
+            $messages = Message::where('chat_id', $chat->id)
                 ->orderBy('created_at', 'desc')
                 ->with('sender')
                 ->paginate($perPage);
+            // Изменено: сортировка сообщений по возрастанию времени создания
+            $messages->setCollection($messages->getCollection()->sortBy('created_at'));
+            return $messages;
         }
         
         throw new \InvalidArgumentException('Неверный тип чата');
     }
     
     /**
-     * Отправляет сообщение в чат
+     * Отправляет сообщение в чат.
      *
-     * @param SendMessageRequest $request
-     * @param string $type
-     * @param int $id
-     * @return Message
+     * @param \Illuminate\Http\Request $request
+     * @param string $type Тип чата ('personal' или 'group')
+     * @param int $id Идентификатор чата или пользователя
+     * @return \App\Models\Message
      */
-    public function sendMessage(SendMessageRequest $request, string $type, int $id): Message
+    public function sendMessage(Request $request, string $type, int $id): Message
     {
-        $currentUserId = Auth::id();
-        $messageData = [
-            'sender_id' => $currentUserId,
-            'message' => $request->input('message'),
-            'message_type' => 'text',
-            'is_read' => false,
-        ];
-        
-        // Проверяем наличие файлов и обрабатываем их
-        if ($request->hasFile('attachments')) {
-            $attachments = $this->handleFileUploads($request->file('attachments'));
-            $messageData['attachments'] = $attachments;
-            $messageData['message_type'] = 'file';
-        }
+        $user = Auth::user();
+        $messageText = $request->input('message');
+        $attachments = $request->file('attachments', []);
         
         if ($type === 'personal') {
-            $receiver = User::findOrFail($id);
-            $messageData['receiver_id'] = $receiver->id;
+            $chat = $this->getOrCreatePersonalChat($user->id, $id);
+            $receiverId = $id;
         } elseif ($type === 'group') {
             $chat = Chat::findOrFail($id);
-            $messageData['chat_id'] = $chat->id;
-            
-            // Если текущий пользователь не является участником чата, добавляем его
-            if (!$chat->users->contains($currentUserId)) {
-                $chat->users()->attach($currentUserId);
-            }
+            $receiverId = null;
         } else {
-            throw new \InvalidArgumentException('Неверный тип чата');
+            throw new \InvalidArgumentException('Неверный тип чата.');
         }
-        
-        $message = Message::create($messageData);
-        
-        // Отправляем уведомление через веб-сокеты
-        broadcast(new MessageSent($message))->toOthers();
-        
+
+        $message = new Message([
+            'chat_id'    => $chat->id,
+            'sender_id'  => $user->id,
+            'receiver_id'=> $receiverId,
+            'message'    => $messageText,
+        ]);
+
+        // Обработка вложений
+        $storedAttachments = [];
+        if ($attachments) {
+            if (!is_array($attachments)) {
+                $attachments = [$attachments]; // гарантируем, что attachments - массив
+            }
+            foreach ($attachments as $file) {
+                // Если $file является массивом или не является экземпляром UploadedFile, пропускаем его
+                if (is_array($file) || !($file instanceof \Illuminate\Http\UploadedFile)) {
+                    continue;
+                }
+                $path = Storage::disk('public')->putFile('attachments', $file);
+                $storedAttachments[] = $path;
+            }
+        }
+
+        if (!empty($storedAttachments)) {
+            $message->attachments = json_encode($storedAttachments, JSON_UNESCAPED_SLASHES);
+        }
+
+        $message->save();
+
         return $message;
     }
-    
+
     /**
-     * Обрабатывает загрузку файлов
+     * Получает или создает личный чат между двумя пользователями.
      *
-     * @param array $files
-     * @return array
+     * @param int $senderId
+     * @param int $receiverId
+     * @return \App\Models\Chat
      */
-    private function handleFileUploads(array $files): array
+    protected function getOrCreatePersonalChat(int $senderId, int $receiverId): Chat
     {
-        $attachments = [];
-        $allowedMime = config('constants.chat.supported_mime_types');
-        
-        foreach ($files as $file) {
-            if (!in_array($file->getMimeType(), $allowedMime)) {
-                continue; // Пропускаем неподдерживаемые файлы
-            }
-            $filename = uniqid() . '_' . $file->getClientOriginalName();
-            $path = $file->storeAs('chat_attachments', $filename, 'public');
-            
-            $attachments[] = [
-                'file_name' => $filename,
-                'original_name' => $file->getClientOriginalName(),
-                'mime_type' => $file->getMimeType(),
-                'file_size' => $file->getSize(),
-                'file_path' => Storage::url($path),
-            ];
+        $chat = Chat::where(function ($query) use ($senderId, $receiverId) {
+            $query->where('sender_id', $senderId)
+                ->where('receiver_id', $receiverId);
+        })->orWhere(function ($query) use ($senderId, $receiverId) {
+            $query->where('sender_id', $receiverId)
+                ->where('receiver_id', $senderId);
+        })->where('type', 'personal')->first();
+
+        if (!$chat) {
+            $chat = Chat::create([
+                'sender_id' => $senderId,
+                'receiver_id' => $receiverId,
+                'type' => 'personal',
+                'name' => 'Personal Chat', // Можно сделать имя динамическим
+                'slug' => Str::uuid(),
+            ]);
         }
-        return $attachments;
+
+        return $chat;
     }
-    
+
     /**
      * Помечает сообщения как прочитанные
      *

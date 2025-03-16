@@ -45,3 +45,30 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 });
+
+document.addEventListener("DOMContentLoaded", () => {
+    const inputs = document.querySelectorAll("input.maskphone");
+    for (let i = 0; i < inputs.length; i++) {
+        const input = inputs[i];
+        input.addEventListener("input", mask);
+        input.addEventListener("focus", mask);
+        input.addEventListener("blur", mask);
+    }
+    function mask(event) {
+        const blank = "+_ (___) ___-__-__";
+        let i = 0;
+        const val = this.value.replace(/\D/g, "").replace(/^8/, "7").replace(/^9/, "79");
+        this.value = blank.replace(/./g, function(char) {
+            if (/[_\d]/.test(char) && i < val.length) return val.charAt(i++);
+            return i >= val.length ? "" : char;
+        });
+        if (event.type === "blur") {
+            if (this.value.length == 2) this.value = "";
+        } else {
+            // Добавляем проверку наличия метода setSelectionRange
+            if (this.setSelectionRange) {
+                this.setSelectionRange(this.value.length, this.value.length);
+            }
+        }
+    }
+});

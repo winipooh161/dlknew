@@ -1,21 +1,18 @@
 {
-  "_firebase-init-B7bxRSzu.js": {
-    "file": "assets/firebase-init-B7bxRSzu.js",
-    "name": "firebase-init",
-    "imports": [
-      "_index.esm2017-VEW1WqW1.js"
-    ]
+  "_firebase-init-B_RFWMUP.js": {
+    "file": "assets/firebase-init-B_RFWMUP.js",
+    "name": "firebase-init"
   },
-  "_index.esm2017-VEW1WqW1.js": {
-    "file": "assets/index.esm2017-VEW1WqW1.js",
+  "_index.esm2017-fTSNeBOI.js": {
+    "file": "assets/index.esm2017-fTSNeBOI.js",
     "name": "index.esm2017"
   },
-  "_notification-pIEpekV4.js": {
-    "file": "assets/notification-pIEpekV4.js",
+  "_notification-BPHaAjEO.js": {
+    "file": "assets/notification-BPHaAjEO.js",
     "name": "notification",
     "imports": [
-      "_firebase-init-B7bxRSzu.js",
-      "_index.esm2017-VEW1WqW1.js"
+      "_firebase-init-B_RFWMUP.js",
+      "_index.esm2017-fTSNeBOI.js"
     ]
   },
   "public/css/animate.css": {
@@ -121,23 +118,23 @@
     "src": "resources/fonts/andantinoscript.ttf"
   },
   "resources/js/bootstrap.js": {
-    "file": "assets/bootstrap-j0h-NU53.js",
+    "file": "assets/bootstrap-Tl781P90.js",
     "name": "bootstrap",
     "src": "resources/js/bootstrap.js",
     "isEntry": true,
     "imports": [
-      "_index.esm2017-VEW1WqW1.js"
+      "_index.esm2017-fTSNeBOI.js"
     ]
   },
   "resources/js/chat-main.js": {
-    "file": "assets/chat-main-DaUZDMQ7.js",
+    "file": "assets/chat-main-DoHx4Gh9.js",
     "name": "chat-main",
     "src": "resources/js/chat-main.js",
     "isEntry": true,
     "imports": [
-      "_notification-pIEpekV4.js",
-      "_firebase-init-B7bxRSzu.js",
-      "_index.esm2017-VEW1WqW1.js"
+      "_notification-BPHaAjEO.js",
+      "_firebase-init-B_RFWMUP.js",
+      "_index.esm2017-fTSNeBOI.js"
     ]
   },
   "resources/js/chat-utils.js": {
@@ -147,14 +144,14 @@
     "isEntry": true
   },
   "resources/js/chat.js": {
-    "file": "assets/chat-DfJoepW3.js",
+    "file": "assets/chat-BgjnuLng.js",
     "name": "chat",
     "src": "resources/js/chat.js",
     "isEntry": true,
     "imports": [
-      "_notification-pIEpekV4.js",
-      "_firebase-init-B7bxRSzu.js",
-      "_index.esm2017-VEW1WqW1.js"
+      "_notification-BPHaAjEO.js",
+      "_firebase-init-B_RFWMUP.js",
+      "_index.esm2017-fTSNeBOI.js"
     ]
   },
   "resources/js/emoji-picker.js": {
@@ -170,7 +167,7 @@
     "isEntry": true
   },
   "resources/js/mask.js": {
-    "file": "assets/mask-DP_3RO-J.js",
+    "file": "assets/mask-B2JlSn6A.js",
     "name": "mask",
     "src": "resources/js/mask.js",
     "isEntry": true
@@ -188,13 +185,13 @@
     "isEntry": true
   },
   "resources/js/notification.js": {
-    "file": "assets/notification-Cg09rFsH.js",
+    "file": "assets/notification-bS3jyilA.js",
     "name": "notification",
     "src": "resources/js/notification.js",
     "isEntry": true,
     "imports": [
-      "_firebase-init-B7bxRSzu.js",
-      "_index.esm2017-VEW1WqW1.js"
+      "_firebase-init-B_RFWMUP.js",
+      "_index.esm2017-fTSNeBOI.js"
     ]
   },
   "resources/js/success.js": {

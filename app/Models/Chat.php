@@ -10,10 +10,11 @@ class Chat extends Model
     use HasFactory;
 
     protected $fillable = [
-        'deal_id',
-        'name',
+        'sender_id',
+        'receiver_id',
         'type',
-        'avatar_url',
+        'name',
+        'slug',
     ];
 
     /**
@@ -21,7 +22,7 @@ class Chat extends Model
      */
     public function users()
     {
-        return $this->belongsToMany(User::class)->withPivot('last_read_at');
+        return $this->belongsToMany(User::class)->withTimestamps();
     }
 
     /**
@@ -29,7 +30,7 @@ class Chat extends Model
      */
     public function messages()
     {
-        return $this->hasMany(Message::class, 'chat_id', 'id');
+        return $this->hasMany(Message::class);
     }
 
     /**

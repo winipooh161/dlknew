@@ -4,16 +4,18 @@ import { formatTime, escapeHtml, scrollToBottom, filterMessages, renderMessages 
 import { showChatNotification, checkForNewMessages } from './notification';
 
 document.addEventListener('DOMContentLoaded', () => {
-    const chatContainer = document.querySelector('.chat-container');
-    // Получаем параметры из data-атрибутов
-    // Изменили с const на let для возможности переназначения в loadMessages
-    let currentChatId = chatContainer ? chatContainer.dataset.chatId : null;
-    let currentChatType = chatContainer ? chatContainer.dataset.chatType : null;
-    
-    if (!currentChatId || !currentChatType) {
-        console.error("Неверные параметры чата: currentChatId или currentChatType не установлены");
+    // Ищем контейнер чата по классу или по id
+    let chatContainer = document.querySelector('.chat-container') || document.getElementById('chat-container');
+    let currentChatId, currentChatType;
+    if (!chatContainer || !chatContainer.dataset.chatId || !chatContainer.dataset.chatType) {
+        console.warn("Chat container не найден или отсутствуют параметры чата, используются значения по умолчанию.");
+        currentChatId = '0';
+        currentChatType = 'group';
+    } else {
+        currentChatId = chatContainer.dataset.chatId;
+        currentChatType = chatContainer.dataset.chatType;
     }
-
+    
     const currentUserId = window.Laravel.user.id;
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     const pinImgUrl = window.pinImgUrl;
@@ -34,6 +36,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch(url, options);
             if (!response.ok) {
                 const errText = await response.text();
+                // Если запрошен Vite manifest и он отсутствует, выводим дополнительное сообщение
+                if (url.includes('build/manifest.json')) {
+                    console.error('Vite manifest не найден. Проверьте, что вы выполнили сборку (npm run dev или npm run build).');
+                }
                 throw new Error(`HTTP ${response.status}: ${errText}`);
             }
             return await response.json();
@@ -101,39 +107,51 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(error => console.error('Ошибка загрузки сообщений:', error));
     }
 
-    function sendMessage() {
+    async function sendMessage() {
         if (!currentChatId || (!chatMessageInput.value.trim() && !document.querySelector('.file-input').files[0])) return;
+        sendMessageButton.disabled = true; // блокировка кнопки отправки
         const message = chatMessageInput.value.trim();
         const fileInput = document.querySelector('.file-input');
         const files = fileInput.files;
         let formData = new FormData();
         formData.append('message', message);
-        // Изменено: ключ заменён с "attachments[]" на "attachments"
         for (let i = 0; i < files.length; i++) {
-            formData.append('attachments', files[i]);
+            formData.append('attachments[]', files[i]);
         }
-        fetch(`/chats/${currentChatType}/${currentChatId}/messages`, {
-            method: 'POST',
-            headers: { 'X-CSRF-TOKEN': csrfToken },
-            body: formData,
-        })
-        .then(r => {
-            if (!r.ok) {
-                return r.text().then(text => { throw new Error(text); });
+        try {
+            const response = await fetch(`/chats/${currentChatType}/${currentChatId}/messages`, {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': csrfToken },
+                body: formData,
+            });
+            let data;
+            const contentType = response.headers.get('content-type') || '';
+            if (contentType.indexOf('application/json') !== -1) {
+                data = await response.json();
+            } else {
+                const text = await response.text();
+                if (text.trim().substr(0, 4) === '<!--') {
+                    // Если получен HTML, возможно, сессия истекла или требуется переавторизация
+                    alert('Произошла ошибка авторизации. Перезагрузите страницу.');
+                    window.location.reload();
+                    return;
+                }
+                throw new Error(`Unexpected response: ${text}`);
             }
-            return r.json();
-        })
-        .then(data => {
             if (data.message) {
                 renderMessages([data.message], data.message.sender_id, loadedMessageIds, csrfToken, currentChatType, currentChatId);
+                window.lastLoadedMessageId = data.message.id;
                 chatMessageInput.value = '';
-                document.querySelector('.file-input').value = '';
+                fileInput.value = '';
+            } else {
+                alert(data.error || 'Ошибка при отправке сообщения');
             }
-        })
-        .catch(e => {
+        } catch (e) {
             console.error('Ошибка при отправке сообщения:', e);
-            alert('Ошибка при отправке сообщения: ' + e.message); // Выводим сообщение об ошибке пользователю
-        });
+            alert('Ошибка при отправке сообщения: ' + e.message);
+        } finally {
+            sendMessageButton.disabled = false; // разблокировка кнопки
+        }
     }
 
     function markMessagesAsRead(chatId, chatType) {

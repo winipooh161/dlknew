@@ -4,6 +4,7 @@ namespace App\Http\Requests\Chat;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class SendMessageRequest extends FormRequest
 {
@@ -25,8 +26,17 @@ class SendMessageRequest extends FormRequest
     public function rules()
     {
         return [
-            'message' => 'nullable|string|max:5000',
-            'attachments.*' => 'nullable|file|max:10240', // 10MB максимальный размер файла
+            'message' => [
+                'nullable',
+                'string',
+                'max:5000',
+                function ($attribute, $value, $fail) {
+                    if (empty($value) && empty($this->file('attachments'))) {
+                        $fail('Необходимо ввести текст сообщения или прикрепить файл.');
+                    }
+                },
+            ],
+            'attachments.*' => 'nullable|file|mimes:jpg,jpeg,png,gif,pdf,doc,docx|max:2048', // проверка типов файлов
             'attachments' => 'nullable|array|max:5', // Максимум 5 файлов
         ];
     }
@@ -40,7 +50,7 @@ class SendMessageRequest extends FormRequest
     {
         return [
             'message.max' => 'Сообщение не должно превышать 5000 символов',
-            'attachments.*.max' => 'Размер файла не должен превышать 10MB',
+            'attachments.*.max' => 'Размер файла не должен превышать 2MB',
             'attachments.max' => 'Вы можете загрузить не более 5 файлов',
         ];
     }

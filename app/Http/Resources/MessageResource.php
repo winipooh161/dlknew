@@ -3,6 +3,8 @@
 namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 class MessageResource extends JsonResource
 {
@@ -27,9 +29,31 @@ class MessageResource extends JsonResource
                     $attachments = is_array($decoded) ? $decoded : [];
                 } catch (\Exception $e) {
                     $attachments = [];
+                    Log::error('Ошибка при декодировании attachments: ' . $e->getMessage(), ['attachments' => $this->attachments]);
                 }
             } elseif (is_array($this->attachments)) {
                 $attachments = $this->attachments;
+            }
+        }
+
+        $attachmentUrls = [];
+        if ($attachments) {
+            foreach ($attachments as $attachment) {
+                // Проверяем, что attachment является строкой, прежде чем использовать Storage::exists()
+                if (is_string($attachment)) {
+                    if (Storage::disk('public')->exists($attachment)) {
+                        $attachmentUrls[] = [
+                            'url' => Storage::url($attachment),
+                            'mime' => Storage::mimeType($attachment),
+                            'original_file_name' => basename($attachment), // Extract file name
+                        ];
+                    } else {
+                        Log::warning('Файл не найден: ' . $attachment);
+                        $attachmentUrls[] = null; // Или можно использовать какое-то значение по умолчанию
+                    }
+                } else {
+                    Log::warning('Неверный формат attachment: ' . print_r($attachment, true));
+                }
             }
         }
 
@@ -46,7 +70,7 @@ class MessageResource extends JsonResource
             'sender_avatar'      => $this->sender->avatar_url ?? '/user/avatar/default.png',
             'is_pinned'          => $this->is_pinned,
             'message_type'       => $this->message_type, // ('text', 'file' или 'notification')
-            'attachments'        => $attachments,
+            'attachments'        => $attachmentUrls,
             'created_at'         => $this->created_at->toDateTimeString(),
             'message_link'       => route('chats.messages', ['chatType' => $chatType, 'chatId' => $chatId]) . "#message-{$this->id}",
         ];

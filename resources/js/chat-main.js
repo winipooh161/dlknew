@@ -58,14 +58,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function sendMessage() {
         if (!currentChatId || (!chatMessageInput.value.trim() && !document.querySelector('.file-input').files[0])) return;
+        sendMessageButton.disabled = true; // блокировка кнопки
         const message = chatMessageInput.value.trim();
         const fileInput = document.querySelector('.file-input');
         const files = fileInput.files;
         const formData = new FormData();
         formData.append('message', message);
-        // Изменено: ключ заменён с "attachments[]" на "attachments"
+        // Изменение: используем имя ключа "attachments[]" для отправки массива файлов
         for (let i = 0; i < files.length; i++) {
-            formData.append('attachments', files[i]);
+            formData.append('attachments[]', files[i]);
         }
         try {
             const r = await fetch(`/chats/${currentChatType}/${currentChatId}/messages`, {
@@ -88,6 +89,8 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) {
             showToast('Ошибка при отправке сообщения: ' + e.message);
             console.error('Ошибка при отправке сообщения:', e);
+        } finally {
+            sendMessageButton.disabled = false; // разблокировка кнопки
         }
     }
 
