@@ -567,29 +567,4 @@ class DealsController extends Controller
         $title_site = "Логи изменений сделки";
         return view('deal_change_logs', compact('deal', 'logs', 'title_site'));
     }
-
-    /**
-     * Отображение модального окна для сделки.
-     */
-    public function showDealModal($id)
-    {
-        try {
-            $deal = Deal::with(['coordinator', 'responsibles'])->findOrFail($id);
-            $feeds = DealFeed::where('deal_id', $id)->with('user')->orderBy('created_at', 'desc')->get();
-            $groupChat = Chat::where('deal_id', $id)
-                ->where('type', 'group')
-                ->first();
-
-            return view('deals.partials.dealModal', compact('deal', 'feeds', 'groupChat'));
-        } catch (\Exception $e) {
-            Log::error("Ошибка отображения модального окна сделки: " . $e->getMessage(), ['exception' => $e]);
-            return response()->json(['error' => 'Ошибка при загрузке данных сделки: ' . $e->getMessage()], 500);
-        }
-    }
-
-    // Добавим алиас для метода getDealModal, который используется в маршрутах
-    public function getDealModal($id)
-    {
-        return $this->showDealModal($id);
-    }
 }

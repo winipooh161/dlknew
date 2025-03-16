@@ -23,46 +23,72 @@ document.addEventListener('DOMContentLoaded', () => {
         // Пустая функция для совместимости
     }
 
-    function loadMessages(chatId, chatType) {
-        currentChatId = chatId;
-        currentChatType = chatType;
+    // Улучшенный универсальный уведомлятор (улучшение 12, 20)
+    function showToast(message, type = 'error') {
+        // Здесь можно подключить toaster с кастомными настройками, например, уведомлениям также можно добавить код ошибки (улучшения 12, 85)
+        console.log(`[${type.toUpperCase()}] ${message}`);
+    }
+
+    async function loadMessages(chatId, chatType) {
+        window.lastLoadedMessageId = 0;
         const chatMessagesContainer = document.getElementById('chat-messages');
         const chatMessagesList = chatMessagesContainer.querySelector('ul');
-        
-        // Очищаем список сообщений
         chatMessagesList.innerHTML = '';
-        
-        // Сбрасываем lastLoadedMessageId при загрузке нового чата
-        window.lastLoadedMessageId = 0;
-        
         const chatItem = document.querySelector(`[data-chat-id="${chatId}"][data-chat-type="${chatType}"] h5`);
-        const chatHeader = document.getElementById('chat-header');
-        chatHeader.textContent = chatItem ? chatItem.textContent : 'Выберите чат для общения';
-
-        fetch(`/chats/${chatType}/${chatId}/messages`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                // Очищаем список для предотвращения дублирования
-                chatMessagesList.innerHTML = '';
-                
-                // Обновляем lastLoadedMessageId на основе полученных сообщений
+        document.getElementById('chat-header').textContent = chatItem ? chatItem.textContent : 'Выберите чат для общения';
+        try {
+            const response = await fetch(`/chats/${chatType}/${chatId}/messages`);
+            if (!response.ok) throw new Error('Ошибка запроса сообщений.');
+            const data = await response.json();
+            if (data.error) {
+                showToast(data.error);
+            } else {
                 if (data.messages && data.messages.length > 0) {
-                    const lastMsg = data.messages[data.messages.length - 1];
-                    window.lastLoadedMessageId = lastMsg.id;
+                    window.lastLoadedMessageId = data.messages[data.messages.length - 1].id;
                 }
-                
-                renderMessages(data.messages, currentUserId, new Set(), csrfToken, currentChatType, currentChatId);
-                markMessagesAsRead(chatId, chatType);
-                subscribeToChat(chatId, chatType);
-            })
-            .catch(error => {
-                console.error('Ошибка загрузки сообщений:', error);
+                // Передаем дополнительные данные для улучшенной отрисовки (улучшение 38, 40)
+                renderMessages(data.messages, window.Laravel.user.id, new Set(), csrfToken, chatType, chatId);
+            }
+            await markMessagesAsRead(chatId, chatType);
+        } catch (error) {
+            showToast('Ошибка загрузки сообщений: ' + error.message);
+            console.error('Ошибка загрузки сообщений:', error);
+        }
+    }
+
+    async function sendMessage() {
+        if (!currentChatId || (!chatMessageInput.value.trim() && !document.querySelector('.file-input').files[0])) return;
+        const message = chatMessageInput.value.trim();
+        const fileInput = document.querySelector('.file-input');
+        const files = fileInput.files;
+        const formData = new FormData();
+        formData.append('message', message);
+        // Изменено: ключ заменён с "attachments[]" на "attachments"
+        for (let i = 0; i < files.length; i++) {
+            formData.append('attachments', files[i]);
+        }
+        try {
+            const r = await fetch(`/chats/${currentChatType}/${currentChatId}/messages`, {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': csrfToken },
+                body: formData,
             });
+            if (!r.ok) {
+                const errText = await r.text();
+                throw new Error(errText);
+            }
+            const data = await r.json();
+            if (data.message) {
+                renderMessages([data.message], data.message.sender_id, new Set(), csrfToken, currentChatType, currentChatId);
+                chatMessageInput.value = '';
+                document.querySelector('.file-input').value = '';
+            } else {
+                showToast(data.error || 'Ошибка при отправке сообщения');
+            }
+        } catch (e) {
+            showToast('Ошибка при отправке сообщения: ' + e.message);
+            console.error('Ошибка при отправке сообщения:', e);
+        }
     }
 
     // Создаем бургер-меню только для мобильной версии

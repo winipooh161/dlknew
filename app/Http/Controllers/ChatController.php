@@ -99,24 +99,25 @@ class ChatController extends Controller
      * @param int $id Идентификатор чата или пользователя
      * @return \Illuminate\Http\JsonResponse
      */
-    public function chatMessages($type, $id)
+    public function chatMessages(string $type, int $id): \Illuminate\Http\JsonResponse
     {
         $currentUserId = Auth::id();
         $perPage = 50;
-
         try {
             $messages = $this->messageService->getChatMessages($type, $id, $currentUserId, $perPage);
             $formattedMessages = MessageResource::collection($messages);
-
-            return response()->json([
+            return $this->prepareChatResponse([
                 'current_user_id' => $currentUserId,
                 'messages'        => $formattedMessages,
-            ], 200);
+            ]);
         } catch (\Exception $e) {
-            Log::error('Ошибка при загрузке сообщений: ' . $e->getMessage(), [
+            Log::error('Ошибка при загрузке сообщений', [
+                'error' => $e->getMessage(),
+                'chat_type' => $type,
+                'chat_id' => $id,
                 'trace' => $e->getTraceAsString()
             ]);
-            return response()->json(['error' => 'Ошибка загрузки сообщений.'], 500);
+            return $this->prepareChatResponse(['error' => 'Ошибка загрузки сообщений.'], 500);
         }
     }
 
@@ -132,13 +133,9 @@ class ChatController extends Controller
     {
         try {
             $message = $this->messageService->sendMessage($request, $type, $id);
-
-            // Получаем данные пользователя и чата для уведомления
             $user = Auth::user();
             $chat = ($type === 'group') ? Chat::find($id) : null;
             $chatName = ($type === 'group' && $chat) ? $chat->name : $user->name;
-
-            // Добавляем данные пользователя и чата в событие MessageSent
             broadcast(new MessageSent($message, [
                 'user_id' => $user->id,
                 'user_name' => $user->name,
@@ -147,12 +144,13 @@ class ChatController extends Controller
                 'chat_name' => $chatName,
             ]))->toOthers();
 
-            return response()->json(['message' => new MessageResource($message)], 201);
+            // Можно расширить данные ответа для будущих настроек
+            return $this->prepareChatResponse(['message' => new MessageResource($message)], 201);
         } catch (\Exception $e) {
             Log::error('Ошибка при отправке сообщения: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
-            return response()->json(['error' => 'Internal Server Error'], 500);
+            return $this->prepareChatResponse(['error' => 'Internal Server Error'], 500);
         }
     }
 
@@ -472,5 +470,18 @@ class ChatController extends Controller
             ]);
             return response()->json(['error' => 'Ошибка при откреплении сообщения.'], 500);
         }
+    }
+
+    // Новый метод для централизованной подготовки ответа чата с улучшенной структурой (улучшение 2, 21, 90)
+    protected function prepareChatResponse(array $data, int $status = 200): \Illuminate\Http\JsonResponse
+    {
+        // Улучшение 101: Добавляем api_version из конфигурации
+        return response()->json(
+            array_merge([
+                'timestamp'   => now()->toIso8601String(),
+                'api_version' => config('app.api_version', '1.0'),
+            ], $data),
+            $status
+        );
     }
 }

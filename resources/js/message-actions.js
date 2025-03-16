@@ -1,5 +1,14 @@
 import { filterMessages } from './chat-utils';
 
+// Улучшение 103: Функция централизованного логирования ошибок
+function logError(error) {
+    if (window.Sentry) {
+        window.Sentry.captureException(error);
+    } else {
+        console.error(error);
+    }
+}
+
 export function attachMessageActionListeners(csrfToken, currentChatType, currentChatId) {
     document.querySelectorAll('.delete-message').forEach(button => {
         button.onclick = function() {
@@ -20,7 +29,7 @@ export function attachMessageActionListeners(csrfToken, currentChatType, current
                         alert(data.error || 'Ошибка удаления сообщения');
                     }
                 })
-                .catch(error => console.error('Ошибка:', error));
+                .catch(error => logError(error));
             }
         };
     });
@@ -56,7 +65,7 @@ export function attachMessageActionListeners(csrfToken, currentChatType, current
                 }
             })
             .catch(error => {
-                console.error('Ошибка при закреплении сообщения:', error);
+                logError(error);
             });
         };
     });
@@ -83,7 +92,7 @@ export function attachMessageActionListeners(csrfToken, currentChatType, current
                     filterMessages();
                 } else { alert(data.error || 'Ошибка открепления сообщения'); }
             })
-            .catch(error => console.error('Ошибка:', error));
+            .catch(error => logError(error));
         };
     });
 }

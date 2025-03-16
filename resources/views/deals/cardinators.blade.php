@@ -250,12 +250,12 @@
                 $.ajax({
                     url: "/deal/" + dealId + "/modal",
                     type: "GET",
-                    success: function(modalHtml) {
+                    success: function(modalData) {
                         // Сохраняем модальное окно в кэш
-                        modalCache[dealId] = modalHtml;
+                        modalCache[dealId] = modalData;
                         
                         // Вставляем HTML модального окна
-                        $modalContainer.html(modalHtml);
+                        // $modalContainer.html(modalHtml);
                         
                         // Инициализируем Select2 для dropdowns
                         initSelect2();

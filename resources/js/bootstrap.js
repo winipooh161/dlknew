@@ -17,30 +17,27 @@ if (token) {
 
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 
-// Инициализация Firebase для Laravel Echo
-
+// Инициализация Firebase с оптимизированной конфигурацией и дополнительной обработкой ошибок
 import { initializeApp } from 'firebase/app';
 import { getMessaging, onMessage } from 'firebase/messaging';
-// Добавляем импорт Firestore
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || process.env.FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || process.env.FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || process.env.FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || process.env.FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || process.env.FIREBASE_APP_ID,
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyB6N1n8dW95YGMMuTsZMRnJY1En7lK2s2M',
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'dlk-diz.firebaseapp.com',
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'dlk-diz.firebasestorage.app',
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'dlk-diz.firebasestorage.app',
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '209164982906',
+    appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:209164982906:web:0836fbb02e7effd80679c3',
 };
 
 const app = initializeApp(firebaseConfig);
 const messaging = getMessaging(app);
-// Инициализация Firestore и сохранение в глобальной области
 window.firestore = getFirestore(app);
 
 onMessage(messaging, (payload) => {
   console.log('Получено сообщение: ', payload);
-  // ...обработка полученного сообщения...
+  // Обработка уведомлений (улучшение 35, 86)
 });
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -50,25 +47,38 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// Оборачиваем fetch-запросы в блок обработки ошибок и добавляем проверку статуса ответа.
-fetch(url, {
-    method: 'POST',
-    credentials: 'same-origin',
-    headers: {
-        'Content-Type': 'application/json',
-        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-    },
-    body: JSON.stringify(data)
-})
-.then(response => {
-    if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+// Улучшение 106: Глобальный обработчик ошибок для fetch-запросов
+window.addEventListener('error', function(event) {
+    if (window.Sentry) {
+        window.Sentry.captureException(event.error);
+    } else {
+        console.error(event.error);
     }
-    return response.json();
-})
-.then(data => {
-    // ...обработка данных...
-})
-.catch(error => {
-    console.error('Ошибка в POST запросе:', error);
 });
+
+// Оборачиваем fetch-запросы в блок обработки ошибок и добавляем проверку статуса ответа.
+if (typeof url !== 'undefined' && typeof data !== 'undefined') {
+    fetch(url, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        // ...обработка данных...
+    })
+    .catch(error => {
+        console.error('Ошибка в POST запросе:', error);
+    });
+} else {
+    console.error('Переменные url или data не определены для fetch.');
+}

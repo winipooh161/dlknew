@@ -67,6 +67,8 @@ class Chat extends Component
             $this->messages = Message::where('chat_id', $this->currentChatId)
                 ->orderBy('created_at', 'asc')
                 ->get();
+            // Улучшение 105: Уведомляем фронтенд о необходимости автоскролла
+            $this->emit('scrollToBottom');
         }
     }
 

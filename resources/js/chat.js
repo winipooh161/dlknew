@@ -108,8 +108,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const files = fileInput.files;
         let formData = new FormData();
         formData.append('message', message);
+        // Изменено: ключ заменён с "attachments[]" на "attachments"
         for (let i = 0; i < files.length; i++) {
-            formData.append('files[]', files[i]);
+            formData.append('attachments', files[i]);
         }
         fetch(`/chats/${currentChatType}/${currentChatId}/messages`, {
             method: 'POST',
@@ -129,7 +130,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.querySelector('.file-input').value = '';
             }
         })
-        .catch(e => console.error('Ошибка при отправке сообщения:', e));
+        .catch(e => {
+            console.error('Ошибка при отправке сообщения:', e);
+            alert('Ошибка при отправке сообщения: ' + e.message); // Выводим сообщение об ошибке пользователю
+        });
     }
 
     function markMessagesAsRead(chatId, chatType) {

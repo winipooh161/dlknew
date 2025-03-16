@@ -70,7 +70,8 @@ export function renderMessages(messages, currentUserId, loadedMessageIds, csrfTo
                 if (message.attachments && Array.isArray(message.attachments) && message.attachments.length > 0) {
                     message.attachments.forEach(attachment => {
                         if (attachment && attachment.mime && attachment.mime.startsWith('image/')) {
-                            contentHtml += `<div><img src="${attachment.url}" alt="Image" style="max-width:100%; border-radius:4px;"></div>`;
+                            // Улучшение 104: Добавляем атрибут loading="lazy"
+                            contentHtml += `<div><img src="${attachment.url}" alt="Image" loading="lazy" style="max-width:100%; border-radius:4px;"></div>`;
                         } else if (attachment && attachment.url) {
                             contentHtml += `<div><a href="${attachment.url}" target="_blank">${escapeHtml(attachment.original_file_name || 'Файл')}</a></div>`;
                         }

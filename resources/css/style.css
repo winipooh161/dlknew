@@ -5182,4 +5182,6 @@ td.link__deistv a {
     letter-spacing: 0px;
     vertical-align: middle;
     color: var(--ser);
+}.support .faq_item {
+    width: 48%;
 }

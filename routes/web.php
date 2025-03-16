@@ -94,9 +94,11 @@ Route::middleware(['auth', 'status:partner'])->group(function () {
 });
 Route::middleware(['auth', 'status:coordinator,admin,partner,visualizer,architect,designer'])->group(function () {
     Route::get('/deal-cardinator', [DealsController::class, 'dealCardinator'])->name('deal.cardinator');
-    // Новый маршрут для модального окна сделки
-    Route::get('/deal/{deal}/modal', [DealsController::class, 'getDealModal'])->name('deal.modal');
+    // Используйте один маршрут для модального окна:
+    Route::get('/deal/{deal}/modal', [App\Http\Controllers\DealModalController::class, 'getDealModal'])->name('deal.modal');
 });
+// Удалите или закомментируйте дублирующий маршрут ниже:
+// Route::get('/deal/{id}/modal', [App\Http\Controllers\DealModalController::class, 'showDealModal'])->name('deal.modal');
 Route::middleware(['auth', 'status:coordinator,admin,partner'])->group(function () {
    
     Route::get('/deals/create', [DealsController::class, 'createDeal'])->name('deals.create');
@@ -203,7 +205,7 @@ Route::post('/deal/update/{id}', [DealsController::class, 'updateDeal'])
     ->name('deal.update');
 
 // Маршрут для отображения модального окна сделки
-Route::get('/deal/{id}/modal', [App\Http\Controllers\DealsController::class, 'showDealModal'])
+Route::get('/deal/{id}/modal', [App\Http\Controllers\DealModalController::class, 'showDealModal'])
     ->name('deal.modal');
 
     Route::post('/chats/{chat}/messages/{message}/pin', [ChatController::class, 'pinMessage']);

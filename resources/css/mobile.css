@@ -333,6 +333,9 @@
 }
 
 @media only screen and (max-width: 768px) {
+    .support .faq_item {
+        width: 100%;
+    }
     table {
         padding: var(--p10);
     }
