@@ -8,6 +8,7 @@ use App\Http\Controllers\DealFeedController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CommonController;
 use App\Http\Controllers\CommercialController;
+use App\Http\Controllers\DealModalController;
 use App\Http\Controllers\SupportController;
 use App\Http\Controllers\SmetsController;
 use App\Http\Controllers\DealsController;
@@ -95,10 +96,10 @@ Route::middleware(['auth', 'status:partner'])->group(function () {
 Route::middleware(['auth', 'status:coordinator,admin,partner,visualizer,architect,designer'])->group(function () {
     Route::get('/deal-cardinator', [DealsController::class, 'dealCardinator'])->name('deal.cardinator');
     // Используйте один маршрут для модального окна:
-    Route::get('/deal/{deal}/modal', [App\Http\Controllers\DealModalController::class, 'getDealModal'])->name('deal.modal');
+    
 });
-// Удалите или закомментируйте дублирующий маршрут ниже:
-// Route::get('/deal/{id}/modal', [App\Http\Controllers\DealModalController::class, 'showDealModal'])->name('deal.modal');
+
+
 Route::middleware(['auth', 'status:coordinator,admin,partner'])->group(function () {
    
     Route::get('/deals/create', [DealsController::class, 'createDeal'])->name('deals.create');
@@ -106,6 +107,8 @@ Route::middleware(['auth', 'status:coordinator,admin,partner'])->group(function 
     Route::put('/deal/update/{id}', [DealsController::class, 'updateDeal'])->name('deal.update');
     Route::get('/deals/{deal}/edit', [DealsController::class, 'editDeal'])->name('deal.edit');
     Route::put('/deals/{deal}', [DealsController::class, 'updateDeal'])->name('deal.update');
+    Route::get('/deal/{deal}/modal', [DealModalController::class, 'getDealModal'])->name('deal.modal');
+    
 });
 
 Route::middleware(['auth', 'status:coordinator,admin'])->group(function () {
@@ -205,7 +208,5 @@ Route::post('/deal/update/{id}', [DealsController::class, 'updateDeal'])
     ->name('deal.update');
 
 // Маршрут для отображения модального окна сделки
-Route::get('/deal/{id}/modal', [App\Http\Controllers\DealModalController::class, 'showDealModal'])
-    ->name('deal.modal');
 
     Route::post('/chats/{chat}/messages/{message}/pin', [ChatController::class, 'pinMessage']);

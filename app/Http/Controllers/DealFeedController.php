@@ -8,27 +8,23 @@ use Illuminate\Support\Facades\Auth;
 
 class DealFeedController extends Controller
 {
-    public function store(Request $request, Deal $deal)
+    public function store(Request $request, $dealId)
     {
-        if (!in_array(Auth::user()->status, ['coordinator', 'admin'])) {
-            return response()->json(['error' => 'Доступ запрещён'], 403);
-        }
-    
-        $validated = $request->validate([
-            'content' => 'required|string|max:2000',
+        $request->validate([
+            'content' => 'required|string|max:1990',
         ]);
-    
+
         $feed = DealFeed::create([
-            'deal_id' => $deal->id,
+            'deal_id' => $dealId,
             'user_id' => Auth::id(),
-            'content' => $validated['content'],
+            'content' => $request->input('content'),
         ]);
-    
+
         return response()->json([
-            'user_name' => Auth::user()->name,
-            'avatar_url' => Auth::user()->avatar_url,
-            'content' => $feed->content,
-            'date' => $feed->created_at->format('d.m.Y H:i'),
+            'user_name'  => $feed->user->name,
+            'content'    => $feed->content,
+            'date'       => $feed->created_at->format('d.m.Y H:i'),
+            'avatar_url' => $feed->user->avatar_url,
         ]);
     }
 }

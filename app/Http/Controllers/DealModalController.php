@@ -13,28 +13,47 @@ class DealModalController extends Controller
     /**
      * Отображение модального окна для сделки.
      */
-    public function showDealModal($id)
-    {
-        try {
-            $deal = Deal::with(['coordinator', 'responsibles'])->findOrFail($id);
-            $feeds = DealFeed::where('deal_id', $id)->with('user')->orderBy('created_at', 'desc')->get();
-            $groupChat = Chat::where('deal_id', $id)
-                ->where('type', 'group')
-                ->first();
-
-            $dealFields = $this->getDealFields();
-
-            return view('deals.partials.dealModal', compact('deal', 'feeds', 'groupChat', 'dealFields'));
-        } catch (\Exception $e) {
-            Log::error("Ошибка отображения модального окна сделки: " . $e->getMessage(), ['exception' => $e]);
-            return response()->json(['error' => 'Ошибка при загрузке данных сделки: ' . $e->getMessage()], 500);
-        }
-    }
+  
 
     // Добавим алиас для метода getDealModal, который используется в маршрутах
     public function getDealModal($id)
     {
-        return $this->showDealModal($id);
+        try {
+            $deal = Deal::with(['coordinator', 'responsibles', 'users'])->findOrFail($id);
+            $feeds = DealFeed::where('deal_id', $id)
+                ->with('user')
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            $groupChat = Chat::where('deal_id', $id)
+                ->where('type', 'group')
+                ->first();
+
+            // Если групповой чат не найден – создаём его
+            if (!$groupChat) {
+                $responsibleIds = $deal->users->pluck('id')->toArray();
+                if (!in_array($deal->user_id, $responsibleIds)) {
+                    $responsibleIds[] = $deal->user_id;
+                }
+                $groupChat = Chat::create([
+                    'name'    => "Групповой чат сделки: {$deal->name}",
+                    'type'    => 'group',
+                    'deal_id' => $deal->id,
+                    'slug'    => (string) Str::uuid(),
+                ]);
+                $groupChat->users()->attach($responsibleIds);
+            }
+
+            // Формирование полей сделки (пример для модуля "Заказ")
+            $dealFields = $this->getDealFields();
+
+            return response()->json([
+                'html' => view('deals.partials.dealModal', compact('deal', 'feeds', 'groupChat', 'dealFields'))->render()
+            ]);
+        } catch (\Exception $e) {
+            Log::error("Ошибка отображения модального окна сделки: " . $e->getMessage(), ['exception' => $e]);
+            return response()->json(['error' => 'Ошибка при загрузке данных сделки: ' . $e->getMessage()], 500);
+        }
     }
 
     private function getDealFields() {

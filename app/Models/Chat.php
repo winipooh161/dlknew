@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Chat extends Model
 {
@@ -15,7 +16,23 @@ class Chat extends Model
         'type',
         'name',
         'slug',
+        'deal_id',
     ];
+
+    /**
+     * Boot the model.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+        
+        // Автоматически генерируем slug если он не был передан
+        static::creating(function ($chat) {
+            if (empty($chat->slug)) {
+                $chat->slug = (string) Str::uuid();
+            }
+        });
+    }
 
     /**
      * Пользователи, участвующие в чате.

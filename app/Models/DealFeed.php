@@ -9,7 +9,11 @@ class DealFeed extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['deal_id', 'user_id', 'content'];
+    protected $fillable = [
+        'deal_id',
+        'user_id',
+        'content',
+    ];
 
     public function deal()
     {

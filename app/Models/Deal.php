@@ -10,46 +10,31 @@ class Deal extends Model
     use HasFactory;
 
     protected $fillable = [
-        // Старые поля:
+        'common_id',
+        'commercial_id',
         'client_name',
         'name',
         'client_phone',
         'total_sum',
-        'status',
-        'link',
-        'registration_token',
-        'registration_token_expiry',
-        'user_id',
-        'coordinator_id',
-        'avatar_path',
-        'client_city',
-        'client_email',
-        'object_type',
-        'package',
-        'has_animals',
-        'has_plants',
-        'object_style',
-        'measurements',
-        'rooms_count',
-        'deal_end_date',
-        'common_id',
-        'commercial_id',
-
-        // Новые поля (Общие)
-        'completion_responsible',
-        'office_equipment',
-        'coordinator_score',
         'measuring_cost',
         'project_budget',
+        'status',
+        'registration_link',
+        'registration_link_expiry',
+        'user_id',
+        'coordinator_id',
+        'registration_token',
+        'registration_token_expiry',
+        'avatar_path',
+        'link',
         'created_date',
+        'client_city',
+        'client_email',
         'client_info',
-        'payment_date',
         'execution_comment',
         'comment',
-
-        // Поля блока "ЗАКАЗ"
         'project_number',
-        // 'order_stage', // удалено, т.к. статус хранится только в status
+        'order_stage',
         'price_service',
         'rooms_count_pricing',
         'execution_order_comment',
@@ -58,8 +43,6 @@ class Deal extends Model
         'office_partner_id',
         'client_account_link',
         'chat_link',
-
-        // Поля блока "РАБОТА НАД ПРОЕКТОМ"
         'measurement_comments',
         'measurements_file',
         'brief',
@@ -73,8 +56,6 @@ class Deal extends Model
         'visualizer_id',
         'visualization_link',
         'final_project_file',
-
-        // Поля блока "ФИНАЛ ПРОЕКТА"
         'work_act',
         'client_project_rating',
         'architect_rating_client',
@@ -91,11 +72,22 @@ class Deal extends Model
         'chat_screenshot',
         'coordinator_comment',
         'archicad_file',
-
-        // Поля блока "О СДЕЛКЕ"
         'contract_number',
         'contract_attachment',
         'deal_note',
+        'object_type',
+        'package',
+        'completion_responsible',
+        'office_equipment',
+        'stage',
+        'coordinator_score',
+        'has_animals',
+        'has_plants',
+        'object_style',
+        'measurements',
+        'rooms_count',
+        'deal_end_date',
+        'payment_date',
     ];
 
     public function user()
@@ -150,20 +142,12 @@ class Deal extends Model
 
     public function responsibles()
     {
-        return $this->users()->wherePivot('role', 'responsible');
+        return $this->belongsToMany(User::class, 'deal_user');
     }
 
     public function allUsers()
     {
         return $this->users()->wherePivotIn('role', ['responsible', 'coordinator']);
-    }
-
-    public function getUnreadMessagesCount($userId)
-    {
-        return $this->chatMessages()
-            ->where('user_id', '!=', $userId)
-            ->where('is_read', false)
-            ->count();
     }
 
     public function dealFeeds()
@@ -174,10 +158,5 @@ class Deal extends Model
     public function changeLogs()
     {
         return $this->hasMany(DealChangeLog::class);
-    }
-
-    public function view(User $user, Deal $deal)
-    {
-        return $deal->users->contains($user->id);
     }
 }

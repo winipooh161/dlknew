@@ -29,18 +29,15 @@ class DealsController extends Controller
         $title_site = "Сделки | Личный кабинет Экспресс-дизайн";
         $user = Auth::user();
 
-        // Получение параметров фильтрации
         $search = $request->input('search');
         $status = $request->input('status');
-        $view_type = $request->input('view_type', 'blocks'); // блоки или таблица
+        $view_type = $request->input('view_type', 'blocks');
         $viewType = $view_type;
 
-        // Базовый запрос
         $query = Deal::query();
 
-        // Фильтрация сделок в зависимости от статуса пользователя:
         if ($user->status === 'admin') {
-            // Всё оставляем без фильтрации
+            // без фильтра
         } elseif ($user->status === 'partner') {
             $query->where('office_partner_id', $user->id);
         } elseif ($user->status === 'coordinator') {
@@ -51,7 +48,6 @@ class DealsController extends Controller
             });
         }
 
-        // Применяем поиск, если задан
         if ($search) {
             $query->where(function($q) use ($search) {
                 $q->where('name', 'LIKE', "%{$search}%")
@@ -65,30 +61,22 @@ class DealsController extends Controller
             });
         }
 
-        // Фильтрация по статусу
         if ($status && $status !== 'null') {
             $query->where('status', $status);
         }
 
-        // Получаем сделки
         $deals = $query->get();
 
-        // Значение $deal по умолчанию (для модального окна)
         $deal = null;
 
-        // Дополнительные данные для представления
         $statuses = [
             'Ждем ТЗ', 'Планировка', 'Коллажи', 'Визуализация', 'Рабочка/сбор ИП',
             'Проект готов', 'Проект завершен', 'Проект на паузе', 'Возврат',
             'В работе', 'Завершенный', 'На потом', 'Регистрация',
             'Бриф прикриплен', 'Поддержка', 'Активный'
         ];
-        $visualizers = User::where('status', 'visualizer')->get();
-        $coordinators = User::where('status', 'coordinator')->get();
-        $partners = User::where('status', 'partner')->get();
 
-        // Формируем переменную $feeds – получаем все записи ленты по сделкам
-        $feeds = \App\Models\DealFeed::whereIn('deal_id', $deals->pluck('id'))->get();
+        $feeds = DealFeed::whereIn('deal_id', $deals->pluck('id'))->get();
 
         return view('cardinators', compact(
             'deals',
@@ -98,12 +86,10 @@ class DealsController extends Controller
             'viewType',
             'deal',
             'statuses',
-            'visualizers',
-            'coordinators',
-            'partners',
             'feeds'
         ));
     }
+
  /**
      * Метод для загрузки ленты комментариев по сделке.
      * Вызывается AJAX‑запросом и возвращает JSON с записями ленты.
@@ -305,6 +291,7 @@ class DealsController extends Controller
             'name'    => "Групповой чат сделки: {$deal->name}",
             'type'    => 'group',
             'deal_id' => $deal->id,
+            'slug'    => (string) \Illuminate\Support\Str::uuid(), // Добавляем значение для slug
         ]);
 
         $validUserIds = User::whereIn('id', $userIds)->pluck('id')->toArray();
@@ -410,7 +397,6 @@ class DealsController extends Controller
                 'client_email'  => 'nullable|email',
                 'comment'       => 'nullable|string',
                 'deal_note'     => 'nullable|string',
-                // изменено: правило для проверки файла теперь по ключу "avatar_path"
                 'avatar_path'   => 'nullable|image|mimes:jpg,jpeg,png,gif|max:5120',
                 'created_date'  => 'nullable|date',
             ];
@@ -418,7 +404,6 @@ class DealsController extends Controller
             if (in_array($user->status, ['coordinator', 'admin'])) {
                 $baseRules = array_merge($baseRules, [
                     'status'                     => 'nullable|string',
-                    'priority'                   => 'nullable|string',
                     'package'                    => 'nullable|string|max:255',
                     'project_number'             => 'nullable|string|max:21',
                     'price_service_option'       => 'nullable|string|max:255',
@@ -457,7 +442,7 @@ class DealsController extends Controller
                     'coordinator_rating_client'  => 'nullable|numeric',
                     'coordinator_rating_partner' => 'nullable|numeric',
                     'coordinator_comment'        => 'nullable|string',
-                    'chat_screenshot'            => 'nullable|image|mimes:jpeg,jpg,image/png|max:5120',
+                    'chat_screenshot'            => 'nullable|image|mimes:jpeg,jpg,png|max:5120',
                     'archicad_file'              => 'nullable|file|mimes:pln,dwg|max:307200',
                     'contract_number'            => 'nullable|string|max:100',
                     'contract_attachment'        => 'nullable|file|mimes:pdf,jpeg,jpg,png|max:5120',
@@ -473,14 +458,11 @@ class DealsController extends Controller
             }
 
             $validated = $request->validate($baseRules);
-
-            // Изменено: используем весь массив $validated, чтобы сохранять и значения null
             $updateData = $validated;
 
             $deal->update($updateData);
             $this->logDealChanges($deal, $original, $deal->getAttributes());
 
-            // изменено: используем "avatar_path" вместо "avatar" для файлов аватара
             $fileFields = ($user->status === 'partner')
                 ? ['avatar_path']
                 : [
@@ -516,10 +498,7 @@ class DealsController extends Controller
             }
 
             if ($request->ajax()) {
-                return response()->json([
-                    'success' => true,
-                    'deal' => $deal
-                ]);
+                return response()->json(['success' => true, 'deal' => $deal]);
             }
 
             return redirect()->route('deal.cardinator')->with('success', 'Сделка успешно обновлена.');

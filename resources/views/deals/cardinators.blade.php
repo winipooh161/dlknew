@@ -131,9 +131,11 @@
                                         <ul>
                                             <li>
                                                 @php
-                                                    $groupChat = \App\Models\Chat::where('type', 'group')
-                                                        ->where('deal_id', $dealItem->id)
-                                                        ->first();
+                                                    // Временно отключаем поиск чата, пока не исправим структуру таблицы
+                                                    $groupChat = null;
+                                                    // Закомментируем проблемный код
+                                                    // $groupChat = \App\Models\Chat::where('type', 'group')
+                                                    //    ->first();
                                                 @endphp
                                                 <a href="{{ $groupChat ? url('/chats?active_chat=' . $groupChat->id) : '#' }}">
                                                     <img src="/storage/icon/chat.svg" alt="Чат">
@@ -250,12 +252,12 @@
                 $.ajax({
                     url: "/deal/" + dealId + "/modal",
                     type: "GET",
-                    success: function(modalData) {
+                    success: function(response) {
                         // Сохраняем модальное окно в кэш
-                        modalCache[dealId] = modalData;
+                        modalCache[dealId] = response.html;
                         
                         // Вставляем HTML модального окна
-                        // $modalContainer.html(modalHtml);
+                        $modalContainer.html(response.html);
                         
                         // Инициализируем Select2 для dropdowns
                         initSelect2();
