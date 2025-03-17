@@ -1,5 +1,9 @@
 export function initializeEmojiPicker(textarea) {
     const container = textarea.parentElement;
+    // Если позиция контейнера static, устанавливаем relative для корректного абсолютного позиционирования
+    if (getComputedStyle(container).position === 'static') {
+        container.style.position = 'relative';
+    }
     const emojiButton = document.createElement('button');
     const emojiPicker = document.createElement('div');
     emojiButton.textContent = "😉";
@@ -9,6 +13,7 @@ export function initializeEmojiPicker(textarea) {
     emojiPicker.style.position = 'absolute';
     emojiPicker.style.bottom = '50px';
     emojiPicker.style.left = '10px';
+    emojiPicker.style.zIndex = "1000"; // добавлен z-index для перекрытия
     const emojis = [
         "😀","😁","😂","🤣","😃","😄","😅","😆","😉","😊","😍","😘","😜","😎","😭","😡",
         "😇","😈","🙃","🤔","😥","😓","🤩","🥳","🤯","🤬","🤡","👻","💀","👽","🤖","🎃",

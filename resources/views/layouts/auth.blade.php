@@ -6,15 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title_site }}</title>
-    @vite([ 'resources/css/style.css', 'resources/css/font.css', 'resources/css/element.css', 'resources/css/animation.css', 'resources/css/mobile.css', 'resources/js/bootstrap.js',  'resources/js/success.js', 'resources/js/mask.js','resources/js/notification.js', 'resources/js/login.js'])
-    @php
-        $manifestPath = public_path('build/manifest.json');
-    @endphp
-    @if(file_exists($manifestPath))
-        {{ Vite::useBuildDirectory('build')->asset('resources/js/app.js') }}
-    @else
-        <script src="/js/app.js"></script> <!-- Резервная версия, если манифест отсутствует -->
-    @endif
+    @vite([ 'resources/css/style.css', 'resources/css/font.css', 'resources/css/element.css', 'resources/css/animation.css', 'resources/css/mobile.css', 'resources/js/bootstrap.js',  'resources/js/success.js', 'resources/js/mask.js','resources/js/notification.js', 'resources/js/login.js'])</head>
     <link rel="stylesheet" href="resources/css/animate.css">
     <script src="resources/js/wow.js"></script>
      <!-- Обязательный (и достаточный) тег для браузеров -->

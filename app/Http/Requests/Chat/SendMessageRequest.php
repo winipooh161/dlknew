@@ -3,8 +3,6 @@
 namespace App\Http\Requests\Chat;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rule;
 
 class SendMessageRequest extends FormRequest
 {
@@ -15,43 +13,34 @@ class SendMessageRequest extends FormRequest
      */
     public function authorize()
     {
-        return Auth::check();
+        return true;
     }
 
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array
+     * @return array<string, mixed>
      */
     public function rules()
     {
         return [
-            'message' => [
-                'nullable',
-                'string',
-                'max:5000',
-                function ($attribute, $value, $fail) {
-                    if (empty($value) && empty($this->file('attachments'))) {
-                        $fail('Необходимо ввести текст сообщения или прикрепить файл.');
-                    }
-                },
-            ],
-            'attachments.*' => 'nullable|file|mimes:jpg,jpeg,png,gif,pdf,doc,docx|max:2048', // проверка типов файлов
-            'attachments' => 'nullable|array|max:5', // Максимум 5 файлов
+            'message' => 'required_without:attachments|string|nullable',
+            'attachments' => 'sometimes|array',
+            'attachments.*' => 'file|max:10240', // 10MB max
         ];
     }
-    
+
     /**
-     * Custom message for validation
+     * Get custom messages for validator errors.
      *
      * @return array
      */
     public function messages()
     {
         return [
-            'message.max' => 'Сообщение не должно превышать 5000 символов',
-            'attachments.*.max' => 'Размер файла не должен превышать 2MB',
-            'attachments.max' => 'Вы можете загрузить не более 5 файлов',
+            'message.required_without' => 'Сообщение не может быть пустым, если нет вложений',
+            'attachments.*.file' => 'Вложение должно быть файлом',
+            'attachments.*.max' => 'Размер файла не должен превышать 10MB',
         ];
     }
 }

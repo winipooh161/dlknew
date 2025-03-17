@@ -201,4 +201,16 @@ class ChatService
         
         return $chat;
     }
+
+    public function findPersonalChat($userId, $relatedId)
+    {
+        return Chat::where(function ($query) use ($userId, $relatedId) {
+            $query->where('sender_id', $userId)
+                  ->where('receiver_id', $relatedId);
+        })->orWhere(function ($query) use ($userId, $relatedId) {
+            $query->where('sender_id', $relatedId)
+                  ->where('receiver_id', $userId);
+        })->where('type', 'personal')
+          ->first();
+    }
 }

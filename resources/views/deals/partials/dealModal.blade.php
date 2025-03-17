@@ -9,7 +9,7 @@
                 @if (in_array(Auth::user()->status, ['coordinator', 'admin']))
                     <button data-target="Финал проекта">Финал проекта</button>
                 @endif
-                <button data-target="Лента">Лента</button>
+                {{-- <button data-target="Лента">Лента</button> --}}
                 <ul>
                     <li>
                         <a href="#" onclick="event.preventDefault(); copyRegistrationLink('{{ $deal->registration_token ? route('register_by_deal', ['token' => $deal->registration_token]) : '#' }}')">
@@ -35,7 +35,7 @@
             </div>
 
             <!-- Модуль ленты -->
-            <fieldset class="module__deal" id="module-feed" style="display: none;">
+            {{-- <fieldset class="module__deal" id="module-feed" style="display: none;">
                 <legend>Лента</legend>
                 <div class="feed-posts" id="feed-posts-container">
                     @foreach ($feeds as $feed)
@@ -57,7 +57,7 @@
                     <textarea id="feed-content" name="content" placeholder="Введите ваш комментарий" rows="3"></textarea>
                     <button type="submit">Отправить</button>
                 </form>
-            </fieldset>
+            </fieldset> --}}
 
             <!-- Форма редактирования сделки -->
             <form id="editForm" method="POST" enctype="multipart/form-data" action="{{ route('deal.update', $deal->id) }}">

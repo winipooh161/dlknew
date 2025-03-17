@@ -1,178 +1,289 @@
-import app from './firebase-init';
-import { getMessaging, onMessage, getToken } from 'firebase/messaging';
+/**
+ * Модуль обработки уведомлений
+ */
 
-const messaging = getMessaging(app);
-
-const currentUserId = document.querySelector('meta[name="user-id"]')?.getAttribute('content');
-
-// Новая функция запроса всех разрешений
-function requestAllPermissions() {
-    // Запрос разрешения на уведомления, если не решено
-    if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
-        Notification.requestPermission().then(permission => {
-            console.log('Notification permission:', permission);
-        });
+/**
+ * Класс обработчика уведомлений для приложения
+ */
+class NotificationHandler {
+    constructor() {
+        this.hasInitialized = false;
+        this.notifications = [];
+        this.user = null;
+        this.channels = {};
     }
-    // Запрос разрешения на геолокацию (если требуется для работы сайта)
-    if ('geolocation' in navigator) {
-        navigator.geolocation.getCurrentPosition(
-            position => console.log('Geolocation permission granted:', position),
-            error => console.error('Geolocation error:', error)
-        );
-    }
-}
 
-document.addEventListener('DOMContentLoaded', () => {
-    // Запрашиваем все необходимые разрешения
-    requestAllPermissions();
-    
-    if (Notification.permission === 'granted') { 
-        obtainAndSendToken(); 
+    /**
+     * Инициализирует обработчик уведомлений
+     */
+    init() {
+        if (this.hasInitialized) return;
+
+        this.hasInitialized = true;
+        this.user = this.getUserInfo();
+
+        // Ждем немного, чтобы убедиться, что Echo инициализирован
+        setTimeout(() => {
+            this.setupEventListeners();
+        }, 2000);
     }
-    
-    if (!window.firebaseNotifHandlerRegistered) {
-        onMessage(messaging, payload => {
-            console.log('Получено push‑уведомление:', payload);
-            if(payload.data && payload.data.recipient_id && payload.data.recipient_id !== currentUserId) {
+
+    /**
+     * Извлекает информацию о пользователе из глобального объекта или localStorage
+     * @returns {Object|null} Информация о пользователе или null
+     */
+    getUserInfo() {
+        // Пытаемся получить информацию о пользователе из разных источников
+        if (window.Laravel && window.Laravel.user) {
+            return window.Laravel.user;
+        }
+
+        try {
+            const userString = localStorage.getItem('user_data');
+            if (userString) {
+                return JSON.parse(userString);
+            }
+        } catch (e) {
+            console.warn('Ошибка при получении данных пользователя из localStorage:', e);
+        }
+
+        return null;
+    }
+
+    /**
+     * Настраивает слушателей событий для уведомлений
+     */
+    setupEventListeners() {
+        // Безопасно проверяем наличие Echo и пользователя
+        if (!window.Echo || !this.user) {
+            console.warn('Echo или данные пользователя не доступны для настройки уведомлений');
+            return;
+        }
+
+        try {
+            // Настройка канала для личных уведомлений
+            if (this.user.id) {
+                this.setupPrivateChannel(`user.${this.user.id}`);
+            }
+
+            // Общий канал для всех пользователей
+            this.setupPublicChannel('notifications');
+
+        } catch (error) {
+            console.error('Ошибка при настройке слушателей уведомлений:', error);
+        }
+    }
+
+    /**
+     * Настраивает приватный канал для уведомлений
+     * @param {string} channelName Имя канала
+     */
+    setupPrivateChannel(channelName) {
+        // Проверяем наличие Echo и возможности работы с приватными каналами
+        if (!window.Echo || typeof window.Echo.private !== 'function') {
+            console.warn(`Не удалось подписаться на приватный канал ${channelName}: Echo не инициализирован корректно`);
+            return;
+        }
+
+        // Небольшая задержка для надежности
+        setTimeout(() => {
+            try {
+                const channel = window.Echo.private(channelName);
+                this.channels[channelName] = channel;
+
+                // Подписка на события
+                channel.listen('.notification.received', (notification) => {
+                    this.handleNotification(notification);
+                });
+
+                console.log(`Подписка на приватный канал ${channelName} выполнена`);
+            } catch (error) {
+                console.error(`Ошибка при подписке на приватный канал ${channelName}:`, error);
+            }
+        }, 1000);
+    }
+
+    /**
+     * Настраивает публичный канал для уведомлений
+     * @param {string} channelName Имя канала
+     */
+    setupPublicChannel(channelName) {
+        if (!window.Echo || typeof window.Echo.channel !== 'function') {
+            console.warn(`Не удалось подписаться на публичный канал ${channelName}: Echo не инициализирован корректно`);
+            return;
+        }
+
+        try {
+            const channel = window.Echo.channel(channelName);
+            this.channels[channelName] = channel;
+
+            // Подписка на события
+            channel.listen('.broadcast.message', (notification) => {
+                this.handleBroadcastMessage(notification);
+            });
+
+            console.log(`Подписка на публичный канал ${channelName} выполнена`);
+        } catch (error) {
+            console.error(`Ошибка при подписке на публичный канал ${channelName}:`, error);
+        }
+    }
+
+    /**
+     * Обрабатывает полученное уведомление
+     * @param {Object} notification Объект уведомления
+     */
+    handleNotification(notification) {
+        console.log('Получено уведомление:', notification);
+        
+        // Сохраняем уведомление в список
+        this.notifications.push(notification);
+        
+        // Показываем браузерное уведомление
+        try {
+            this.showBrowserNotification(
+                notification.title || 'Новое уведомление',
+                notification.message || notification.body || '',
+                notification.data || {}
+            );
+        } catch (error) {
+            console.error('Ошибка при отображении уведомления:', error);
+        }
+        
+        // Вызываем событие для обновления UI, если необходимо
+        this.triggerNotificationEvent(notification);
+    }
+
+    /**
+     * Показывает браузерное уведомление
+     * @param {string} title Заголовок уведомления
+     * @param {string} body Текст уведомления
+     * @param {Object} data Дополнительные данные
+     */
+    showBrowserNotification(title, body, data = {}) {
+        if (!("Notification" in window)) {
+            console.log('Этот браузер не поддерживает уведомления');
+            return;
+        }
+
+        if (Notification.permission === 'granted') {
+            const notification = new Notification(title, {
+                body: body,
+                icon: '/img/logo.png'
+            });
+
+            // Обработчик клика по уведомлению
+            notification.onclick = function() {
+                window.focus();
+                if (data.url) {
+                    window.open(data.url, '_blank');
+                }
+                notification.close();
+            };
+        } else if (Notification.permission !== 'denied') {
+            Notification.requestPermission().then(permission => {
+                if (permission === 'granted') {
+                    this.showBrowserNotification(title, body, data);
+                }
+            });
+        }
+    }
+
+    /**
+     * Обрабатывает полученное широковещательное сообщение
+     * @param {Object} message Объект сообщения
+     */
+    handleBroadcastMessage(message) {
+        console.log('Получено широковещательное сообщение:', message);
+        
+        // Если сообщение предназначено для конкретных пользователей, проверяем
+        if (message.recipient_ids && Array.isArray(message.recipient_ids)) {
+            if (!this.user || !message.recipient_ids.includes(this.user.id)) {
+                console.log('Сообщение не предназначено для текущего пользователя');
                 return;
             }
-            // Новая логика формирования сообщения уведомления
-            const sender = payload.data?.sender_name || 'Неизвестно';
-            const message = payload.data?.message_text || payload.notification?.body || '';
-            const title = `Новое сообщение от: ${sender}`;
-            const body = `Сообщение: ${message}`;
-            const options = {
-                body: body,
-                icon: payload.notification?.icon || '/firebase-logo.png',
-                tag: `global-notif-${Date.now()}`
-            };
-            let notif = new Notification(title, options);
-            notif.onclick = function(event) {
-                event.preventDefault();
-                window.focus();
-                if (payload.data && payload.data.chat_id && payload.data.chat_type) {
-                    window.location.href = `/chats/${payload.data.chat_type}/${payload.data.chat_id}`;
-                }
-            };
-            // Изменяем путь на корректный: 
-            new Audio('/storage/avatars/firebase-sound.mp3').play();
+        }
+        
+        // Показываем уведомление
+        this.showBrowserNotification(
+            message.title || 'Уведомление',
+            message.body || message.text || '',
+            message.data || {}
+        );
+        
+        // Вызываем событие для обновления UI
+        this.triggerBroadcastEvent(message);
+    }
+
+    /**
+     * Вызывает событие обновления UI для уведомления
+     * @param {Object} notification Объект уведомления
+     */
+    triggerNotificationEvent(notification) {
+        const event = new CustomEvent('notification:received', {
+            detail: notification
         });
-        window.firebaseNotifHandlerRegistered = true;
+        document.dispatchEvent(event);
     }
-    pollUnreadCounts();
-    
-    if (window.Echo) {
-        window.Echo.channel('global-notifications')
-            .listen('.GlobalNotification', (event) => {
-                console.log('Global notification received:', event);
-                const title = event.title || 'Уведомление';
-                const body = event.message || '';
-                showChatNotification(title, body, event.data);
-            });
+
+    /**
+     * Вызывает событие обновления UI для широковещательного сообщения
+     * @param {Object} message Объект сообщения
+     */
+    triggerBroadcastEvent(message) {
+        const event = new CustomEvent('broadcast:received', {
+            detail: message
+        });
+        document.dispatchEvent(event);
     }
+}
+
+// Создаем экземпляр обработчика уведомлений
+const notificationHandler = new NotificationHandler();
+
+// Инициализация при загрузке страницы
+document.addEventListener('DOMContentLoaded', () => {
+    // Инициализация с небольшой задержкой для уверенности, что другие модули загружены
+    setTimeout(() => {
+        notificationHandler.init();
+    }, 1500);
 });
 
-function obtainAndSendToken() {
-    getToken(messaging, { 
-        vapidKey: 'BLf08mEO3lePyBvZCwTzaSNX9R981qwESUblCemdDVZUT_cs4G3GD2YY38CN8ELIcPmgVRZ92G7ePzY187d4Dh4'
-    })
-    .then((token) => {
-        if (token) {
-            console.log('Получен FCM токен:', token.substring(0, 20) + '...');
-            fetch('/firebase/update-token', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                },
-                body: JSON.stringify({ token })
-            })
-            .then(response => {
-                if (response.ok) {
-                    console.log('Токен успешно сохранён на сервере');
-                } else {
-                    console.error('Ошибка при сохранении токена на сервере');
-                }
-            })
-            .catch(err => console.error('Ошибка отправки токена:', err));
-        } else {
-            console.error('Не удалось получить токен FCM');
-        }
-    })
-    .catch(err => console.error('Ошибка получения токена FCM:', err));
-}
-
-export function showChatNotification(title, body, data = {}) {
-    if(data.sender_name && data.message_text) {
-        title = `Новое сообщение от: ${data.sender_name}`;
-        body = `Сообщение: ${data.message_text}`;
-    }
-    let notif = new Notification(title, {
-        body: body,
-        icon: '/firebase-logo.png',
-        data: data
-    });
-    notif.onclick = function(e) {
-        e.preventDefault();
-        window.focus();
-    };
-    // Воспроизводим звуковое уведомление
-    new Audio('/storage/avatars/firebase-sound.mp3').play();
-}
+// Экспортируем объект для использования в других модулях
+export default notificationHandler;
 
 export function checkForNewMessages() {
-    if (!window.firebaseNotifHandlerRegistered) {
-        onMessage(messaging, (payload) => {
-            if(payload.data && payload.data.recipient_id && payload.data.recipient_id !== currentUserId) { return; }
-            const title = payload.data?.sender_name 
-                ? `Новое сообщение от ${payload.data.sender_name}` 
-                : (payload.notification?.title || 'Новое уведомление');
-            const body = payload.data?.message_text 
-                ? `Сообщение: ${payload.data.message_text}` 
-                : (payload.notification?.body || '');
-            showChatNotification(title, body, payload.data);
-        });
-        window.firebaseNotifHandlerRegistered = true;
+    // Минимальная реализация для устранения ошибки импорта
+    console.log('checkForNewMessages вызвана');
+    // Можно добавить логику проверки новых уведомлений
+}
+
+export function showChatNotification(title, message, data) {
+    // Минимальная реализация для устранения ошибки импорта
+    console.log('showChatNotification вызвана', { title, message, data });
+    if (notificationHandler) {
+        notificationHandler.showBrowserNotification(title, message, data);
     }
 }
 
-function pollUnreadCounts() {
-    let lastTotal = 0;
-    setInterval(() => {
-        fetch('/chats/unread-counts', {
-            method: 'GET',
-            credentials: 'same-origin',
-            headers: {
-                'Accept': 'application/json'
-            }
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-            return response.text();
-        })
-        .then(text => {
-            try {
-                const data = JSON.parse(text);
-                if(data.unread_counts && data.unread_counts.length > 0) {
-                    const totalUnread = data.unread_counts.reduce((sum, chat) => sum + parseInt(chat.unread_count || 0), 0);
-                    if(totalUnread > lastTotal) {
-                        const title = 'Новые сообщения';
-                        const body = `У вас появилось ${totalUnread - lastTotal} новых сообщений.`;
-                        new Notification(title, {
-                            body,
-                            icon: '/firebase-logo.png'
-                        });
-                    }
-                    lastTotal = totalUnread;
-                } else {
-                    lastTotal = 0;
-                }
-            } catch (e) {
-                console.error('Ошибка при получении непрочитанных сообщений: Неверный формат JSON', text);
-            }
-        })
-        .catch(err => console.error('Ошибка при получении непрочитанных сообщений:', err));
-    }, 10000);
+export function subscribeToNotifications() {
+    try {
+        // Проверяем поддержку уведомлений в браузере
+        if (!('Notification' in window)) {
+            console.log('Этот браузер не поддерживает уведомления');
+            return;
+        }
+        
+        // Если разрешения уже получены
+        if (Notification.permission === 'granted') {
+            console.log('Разрешения на уведомления уже получены');
+        } else if (Notification.permission !== 'denied') {
+            // Откладываем запрос на разрешение до первого взаимодействия пользователя
+            document.addEventListener('click', function handleClick() {
+                Notification.requestPermission();
+                document.removeEventListener('click', handleClick);
+            }, { once: true });
+        }
+    } catch (error) {
+        console.error('Ошибка при подписке на уведомления:', error);
+    }
 }

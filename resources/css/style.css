@@ -850,7 +850,7 @@ li.logo_flex.flex {
     display: flex;
     inset: 0px;
     position: fixed;
-    background-image: url("http://127.0.0.1:5173/@fs/C:/OSPanel/domains/dlk/public/img/auth/authFon.png");
+    background-image: url("http://127.0.0.1:5173/@fs/C:/OSPanel/domains/lk/public/img/auth/authFon.png");
     background-position: center center;
     background-size: 100%;
     background-repeat: no-repeat;
@@ -3082,7 +3082,7 @@ a, button {
 
 .custom-checkbox:checked + label::before {
     border-color: rgb(1, 172, 255);
-    background-image: url("http://127.0.0.1:5173/@fs/C:/OSPanel/domains/dlk/resources/icon/cursor.png");
+    background-image: url("http://127.0.0.1:5173/@fs/C:/OSPanel/domains/lk/resources/icon/cursor.png");
     background-repeat: no-repeat;
     background-position: center center;
     border-radius: 7px;
@@ -3716,7 +3716,7 @@ ul.auth__form__link a {
 }
 
 .auth__fon {
-    background-image: url("http://127.0.0.1:5173/@fs/C:/OSPanel/domains/dlk/resources/icon/cursor.png");
+    background-image: url("http://127.0.0.1:5173/@fs/C:/OSPanel/domains/lk/resources/icon/cursor.png");
     background-position: left center;
     height: 100%;
     background-size: contain;
@@ -3963,7 +3963,7 @@ table.dataTable tbody th, table.dataTable tbody td {
 }
 
 .div__create_form {
-    background-image: url("http://127.0.0.1:5173/@fs/C:/OSPanel/domains/dlk/public/img/brifs/formFONbrif.png");
+    background-image: url("http://127.0.0.1:5173/@fs/C:/OSPanel/domains/lk/public/img/brifs/formFONbrif.png");
     background-position: 100% center;
     border-radius: var(--radius);
     background-size: cover;
@@ -5185,3 +5185,165 @@ td.link__deistv a {
 }.support .faq_item {
     width: 48%;
 }
+.chat-messages .message.own{display: flex;margin: 0 0 0 auto;justify-content: flex-end;background: #d3edff;flex-direction: column;}
+li.message {
+    margin: 0 auto 0 0;
+    background: var(--fff);
+}.message-header {
+    width: 100%;
+    /* height: 100%; */
+}
+
+.message-content {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.message-actions {
+    width: 100%;
+    /* height: 100px; */
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: flex-end;
+}
+
+.message-actions button {
+    background: none;
+    height: 25px;
+    min-height: 25px;
+    width: 32px;
+    padding: 5px;
+}
+
+.message-actions button img {
+    width: 25px;
+    height: 25px;
+}
+.burger-users {
+
+display: flex;
+
+flex-direction: column;
+
+gap: 5px;
+}
+.burger-users span {
+    content: "";
+    width: 20px;
+    height: 1px;
+    background: #000;
+}  .file-preview {
+    margin: 10px 0;
+    padding: 5px;
+    background-color: #f5f5f5;
+    border-radius: 5px;
+}
+.file-item {
+    padding: 3px 10px;
+    margin: 2px 0;
+    font-size: 14px;
+    border-left: 3px solid #007bff;
+}
+
+/* Стили для вложений в сообщениях */
+.attachments {
+    margin-top: 8px;
+    width: 100%;
+}
+
+/* Контейнер с изображениями */
+.attachment-images {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 8px;
+}
+.images-row {
+    flex-direction: row;
+}
+.images-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 4px;
+}
+.image-container {
+    position: relative;
+    overflow: hidden;
+    border-radius: 8px;
+}
+.attachment-image {
+    max-width: 100%;
+    max-height: 200px;
+    object-fit: cover;
+    cursor: pointer;
+    border-radius: 8px;
+}
+
+/* Стили для файлов */
+.attachment-files {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+.attachment-file {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    background-color: #f1f1f1;
+    border-radius: 8px;
+    text-decoration: none;
+    color: #333;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+.attachment-file:hover {
+    background-color: #e1e1e1;
+}
+.file-icon {
+    margin-right: 8px;
+    font-size: 18px;
+}
+.file-size {
+    margin-left: auto;
+    font-size: 12px;
+    color: #777;
+    padding-left: 10px;
+}
+
+/* Модальное окно для полноразмерного просмотра */
+.image-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.8);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.image-modal-content {
+    position: relative;
+    max-width: 90%;
+    max-height: 90%;
+}
+.image-modal-content img {
+    max-width: 100%;
+    max-height: 90vh;
+    object-fit: contain;
+}
+.close-modal {
+    position: absolute;
+    top: -30px;
+    right: 0;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 30px;
+    cursor: pointer;
+}
+.burger-users {
+        direction: none;
+    }

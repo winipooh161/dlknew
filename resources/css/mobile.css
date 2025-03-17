@@ -247,7 +247,7 @@
     background-color: #f0f0f0;
 }
     .chat-messages li  {
-        min-width: 60%;
+        min-width: 90%;
     }
     .faq_item {
 
@@ -396,8 +396,8 @@
         padding-bottom: 70px;
     }
     .chat-messages {
-        min-height: 63vh;
-        max-height: 587px;
+        min-height: 75vh;
+        max-height: 611px;
         content: "";
         overflow-y: auto;
         margin-bottom: 10px;
@@ -881,14 +881,15 @@
     .chat-container {
         display: -webkit-box;
         display: -ms-flexbox;
+        padding: 0;
         display: flex;
         -webkit-box-orient: vertical;
         -webkit-box-direction: normal;
-            -ms-flex-direction: column;
-                flex-direction: column;
+        -ms-flex-direction: column;
+        flex-direction: column;
     }
     .user-list {
-        display: none;
+        /* display: none; */
         z-index: 2;
         /* position: absolute; */
         width: 100%;
@@ -1189,4 +1190,13 @@ align-items: flex-start;
         display: none;
     }
 }
-
+@media only screen and (max-width: 768px) {
+    .burger-users {
+        direction: flex;
+    }
+    .user-list {
+        transition: transform 0.3s ease;
+        transform: translateX(-100%);
+        z-index: 999999;
+    }
+}

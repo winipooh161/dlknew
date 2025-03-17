@@ -19,43 +19,8 @@ class MessageResource extends JsonResource
         $chatType = $this->chat ? $this->chat->type : 'personal';
         $chatId = $this->chat_id ?? $this->receiver_id;
         
-        // Проверяем, что attachments является массивом
-        $attachments = [];
-        if (!empty($this->attachments)) {
-            if (is_string($this->attachments)) {
-                // Если строка, пробуем распарсить JSON
-                try {
-                    $decoded = json_decode($this->attachments, true);
-                    $attachments = is_array($decoded) ? $decoded : [];
-                } catch (\Exception $e) {
-                    $attachments = [];
-                    Log::error('Ошибка при декодировании attachments: ' . $e->getMessage(), ['attachments' => $this->attachments]);
-                }
-            } elseif (is_array($this->attachments)) {
-                $attachments = $this->attachments;
-            }
-        }
-
-        $attachmentUrls = [];
-        if ($attachments) {
-            foreach ($attachments as $attachment) {
-                // Проверяем, что attachment является строкой, прежде чем использовать Storage::exists()
-                if (is_string($attachment)) {
-                    if (Storage::disk('public')->exists($attachment)) {
-                        $attachmentUrls[] = [
-                            'url' => Storage::url($attachment),
-                            'mime' => Storage::mimeType($attachment),
-                            'original_file_name' => basename($attachment), // Extract file name
-                        ];
-                    } else {
-                        Log::warning('Файл не найден: ' . $attachment);
-                        $attachmentUrls[] = null; // Или можно использовать какое-то значение по умолчанию
-                    }
-                } else {
-                    Log::warning('Неверный формат attachment: ' . print_r($attachment, true));
-                }
-            }
-        }
+        // Проверяем и правильно обрабатываем вложения
+        $attachments = $this->getProcessedAttachments();
 
         return [
             'id'                 => $this->id,
@@ -70,9 +35,61 @@ class MessageResource extends JsonResource
             'sender_avatar'      => $this->sender->avatar_url ?? '/user/avatar/default.png',
             'is_pinned'          => $this->is_pinned,
             'message_type'       => $this->message_type, // ('text', 'file' или 'notification')
-            'attachments'        => $attachmentUrls,
+            'attachments'        => $attachments,
             'created_at'         => $this->created_at->toDateTimeString(),
             'message_link'       => route('chats.messages', ['chatType' => $chatType, 'chatId' => $chatId]) . "#message-{$this->id}",
         ];
+    }
+    
+    /**
+     * Получает обработанные вложения для сообщения
+     *
+     * @return array
+     */
+    protected function getProcessedAttachments()
+    {
+        // Проверяем, что attachments является массивом или JSON строкой
+        $attachments = [];
+        
+        if (!empty($this->attachments)) {
+            if (is_string($this->attachments)) {
+                // Если строка, пробуем распарсить JSON
+                try {
+                    $decoded = json_decode($this->attachments, true);
+                    $attachments = is_array($decoded) ? $decoded : [];
+                } catch (\Exception $e) {
+                    Log::error('Ошибка при декодировании attachments: ' . $e->getMessage(), ['attachments' => $this->attachments]);
+                    return [];
+                }
+            } elseif (is_array($this->attachments)) {
+                $attachments = $this->attachments;
+            }
+        }
+
+        // Преобразуем старый формат вложений в новый, если нужно
+        $result = [];
+        foreach ($attachments as $attachment) {
+            if (is_string($attachment)) {
+                // Старый формат: просто строка с путем
+                if (Storage::disk('public')->exists($attachment)) {
+                    $result[] = [
+                        'url' => Storage::url($attachment),
+                        'mime' => Storage::mimeType($attachment),
+                        'original_file_name' => basename($attachment),
+                        'size' => Storage::size($attachment)
+                    ];
+                }
+            } elseif (is_array($attachment)) {
+                // Новый формат: массив с полями
+                if (isset($attachment['url'])) {
+                    $result[] = $attachment;
+                } elseif (isset($attachment['path']) && Storage::disk('public')->exists($attachment['path'])) {
+                    $attachment['url'] = Storage::url($attachment['path']);
+                    $result[] = $attachment;
+                }
+            }
+        }
+        
+        return $result;
     }
 }

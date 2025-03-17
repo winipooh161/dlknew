@@ -1,0 +1,33 @@
+{
+    "authHost": "http://lk",
+    "authEndpoint": "/broadcasting/auth",
+    "clients": [],
+    "database": "sqlite",
+    "databaseConfig": {
+        "sqlite": {
+            "databasePath": "/database/laravel-echo-server.sqlite"
+        }
+    },
+    "devMode": true,
+    "host": "0.0.0.0",
+    "port": 6001,
+    "protocol": "http",
+    "socketio": {
+        "path": "/socket.io",
+        "cors": {
+            "origin": "*",
+            "methods": ["GET", "POST"],
+            "allowedHeaders": ["Origin", "Content-Type", "X-Auth-Token", "X-Requested-With", "Accept", "Authorization", "X-CSRF-TOKEN", "X-Socket-Id"]
+        }
+    },
+    "subscribers": {
+        "http": true,
+        "redis": false
+    },
+    "apiOriginAllow": {
+        "allowCors": true,
+        "allowOrigin": "*",
+        "allowMethods": "GET, POST",
+        "allowHeaders": "Origin, Content-Type, X-Auth-Token, X-Requested-With, Accept, Authorization, X-CSRF-TOKEN, X-Socket-Id"
+    }
+}

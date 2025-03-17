@@ -48,6 +48,7 @@ class User extends Authenticatable
         'firebase_token',
         'verification_code',
         'verification_code_expires_at',
+        'fcm_token',
     ];
 
     protected $hidden = [

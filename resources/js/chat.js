@@ -1,42 +1,34 @@
 import { initializeEmojiPicker } from './emoji-picker';
 import { attachMessageActionListeners } from './message-actions';
-import { formatTime, escapeHtml, scrollToBottom, filterMessages, renderMessages } from './chat-utils';
+import { formatTime, escapeHtml, scrollToBottom, filterMessages, renderMessages, fetchNewMessages } from './chat-utils';
 import { showChatNotification, checkForNewMessages } from './notification';
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Ищем контейнер чата по классу или по id
+    // Общие переменные
     let chatContainer = document.querySelector('.chat-container') || document.getElementById('chat-container');
-    let currentChatId, currentChatType;
     if (!chatContainer || !chatContainer.dataset.chatId || !chatContainer.dataset.chatType) {
         console.warn("Chat container не найден или отсутствуют параметры чата, используются значения по умолчанию.");
-        currentChatId = '0';
-        currentChatType = 'group';
+        window.currentChatId = '0';
+        window.currentChatType = 'group';
     } else {
-        currentChatId = chatContainer.dataset.chatId;
-        currentChatType = chatContainer.dataset.chatType;
+        window.currentChatId = chatContainer.dataset.chatId;
+        window.currentChatType = chatContainer.dataset.chatType;
     }
-    
-    const currentUserId = window.Laravel.user.id;
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    const pinImgUrl = window.pinImgUrl;
-    const unpinImgUrl = window.unpinImgUrl;
-    const deleteImgUrl = window.deleteImgUrl;
+    const currentUserId = window.Laravel?.user?.id;
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
     let loadedMessageIds = new Set();
-    let pinnedOnly = false;
-    let notifiedChats = new Set();
+    window.loadedMessageIds = loadedMessageIds;
+    window.lastLoadedMessageId = 0; // Глобальная переменная для ID последнего сообщения
 
-    function showChatBox() {
-        document.querySelector('.user-list').classList.remove('active');
-        document.querySelector('.chat-box').classList.add('active');
-    }
+    // Делаем fetchNewMessages доступной глобально
+    window.fetchNewMessages = fetchNewMessages;
 
-    // Новый универсальный fetch с async/await
+    // Универсальная функция fetch с async/await
     async function fetchJSON(url, options = {}) {
         try {
             const response = await fetch(url, options);
             if (!response.ok) {
                 const errText = await response.text();
-                // Если запрошен Vite manifest и он отсутствует, выводим дополнительное сообщение
                 if (url.includes('build/manifest.json')) {
                     console.error('Vite manifest не найден. Проверьте, что вы выполнили сборку (npm run dev или npm run build).');
                 }
@@ -49,25 +41,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Добавляем функцию подписки на обновления из Firestore
+    // Функция для подписки на обновления из Firestore
     function subscribeToFirebaseMessages(chatId) {
         if (!window.firestore) return;
-        // Используем динамический путь для коллекции сообщений выбранного чата
-        const messagesRef = window.firestore.collection 
-            ? window.firestore.collection(`chats/${chatId}/messages`) 
+        const messagesRef = window.firestore.collection
+            ? window.firestore.collection(`chats/${chatId}/messages`)
             : null;
-        if (!messagesRef) {
-            console.warn('Firestore коллекция не доступна');
-            return;
-        }
-        // Создаём запрос на сортировку по created_at (предполагается, что такое поле хранится)
+        if (!messagesRef) return;
         const q = messagesRef.orderBy('created_at');
         q.onSnapshot((snapshot) => {
             let newMessages = [];
             snapshot.docChanges().forEach(change => {
                 if (change.type === 'added') {
                     const data = change.doc.data();
-                    // Предполагается, что data имеет формат, схожий с API методом renderMessages
                     if (!loadedMessageIds.has(data.id)) {
                         newMessages.push(data);
                     }
@@ -82,78 +68,140 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Обновляем глобальную переменную lastLoadedMessageId при загрузке сообщений
-    function loadMessages(chatId, chatType) {
-        currentChatId = chatId;
-        currentChatType = chatType;
+    // Функция загрузки сообщений
+    async function loadMessages(chatId, chatType) {
+        // Устанавливаем глобальные переменные для доступа в других частях приложения
+        window.currentChatId = chatId;
+        window.currentChatType = chatType;
+        
+        window.lastLoadedMessageId = 0;
         const chatMessagesContainer = document.getElementById('chat-messages');
         const chatMessagesList = chatMessagesContainer.querySelector('ul');
         chatMessagesList.innerHTML = '';
         loadedMessageIds.clear();
         const chatItem = document.querySelector(`[data-chat-id="${chatId}"][data-chat-type="${chatType}"] h5`);
         document.getElementById('chat-header').textContent = chatItem ? chatItem.textContent : 'Выберите чат для общения';
-
-        fetchJSON(`/chats/${chatType}/${chatId}/messages`)
-            .then(data => {
+        try {
+            const response = await fetch(`/chats/${chatType}/${chatId}/messages`);
+            if (!response.ok) throw new Error('Ошибка запроса сообщений.');
+            const data = await response.json();
+            if (data.error) {
+                showToast(data.error);
+            } else {
                 if (data.messages && data.messages.length > 0) {
                     window.lastLoadedMessageId = data.messages[data.messages.length - 1].id;
+                    renderMessages(data.messages, window.Laravel.user.id, loadedMessageIds, csrfToken, chatType, chatId);
                 }
-                renderMessages(data.messages, currentUserId, loadedMessageIds, csrfToken, currentChatType, currentChatId);
-                markMessagesAsRead(chatId, chatType);
-                subscribeToChat(chatId, chatType);
-                // Подписываемся на Firestore обновления для резервного режима и оперативного отображения истории
+                await markMessagesAsRead(chatId, chatType);
                 subscribeToFirebaseMessages(chatId);
-            })
-            .catch(error => console.error('Ошибка загрузки сообщений:', error));
+                // Запускаем проверку новых сообщений сразу после загрузки истории
+                fetchNewMessages();
+            }
+        } catch (error) {
+            showToast('Ошибка загрузки сообщений: ' + error.message);
+            console.error('Ошибка загрузки сообщений:', error);
+        }
     }
 
+    // Обработчики для прикрепления файлов
+    const setupFileAttachment = () => {
+        const attachFileButtons = document.querySelectorAll('.attach-file');
+        const fileInputs = document.querySelectorAll('.file-input');
+        
+        attachFileButtons.forEach((button, index) => {
+            if (fileInputs[index]) {
+                // Обработчик клика по кнопке прикрепления
+                button.addEventListener('click', () => {
+                    fileInputs[index].click(); // Активируем скрытый input
+                });
+                
+                // Показываем имена выбранных файлов
+                fileInputs[index].addEventListener('change', (e) => {
+                    const files = e.target.files;
+                    if (files.length > 0) {
+                        let fileNames = Array.from(files).map(file => file.name).join(', ');
+                        console.log('Выбранные файлы:', fileNames);
+                        
+                        // Опционально: показываем превью файлов
+                        const chatInput = button.closest('.chat-input');
+                        let filePreview = chatInput.querySelector('.file-preview');
+                        
+                        if (!filePreview) {
+                            filePreview = document.createElement('div');
+                            filePreview.classList.add('file-preview');
+                            chatInput.insertBefore(filePreview, chatMessageInput);
+                        }
+                        
+                        filePreview.innerHTML = '';
+                        Array.from(files).forEach(file => {
+                            const fileItem = document.createElement('div');
+                            fileItem.classList.add('file-item');
+                            fileItem.textContent = file.name;
+                            filePreview.appendChild(fileItem);
+                        });
+                    }
+                });
+            }
+        });
+    };
+
+    // Вызываем функцию настройки прикрепления файлов
+    setupFileAttachment();
+
+    // Функция отправки сообщения
     async function sendMessage() {
-        if (!currentChatId || (!chatMessageInput.value.trim() && !document.querySelector('.file-input').files[0])) return;
-        sendMessageButton.disabled = true; // блокировка кнопки отправки
+        if (!currentChatId || (!chatMessageInput.value.trim() && !document.querySelector('.file-input').files.length)) return;
+        
+        sendMessageButton.disabled = true;
         const message = chatMessageInput.value.trim();
         const fileInput = document.querySelector('.file-input');
         const files = fileInput.files;
-        let formData = new FormData();
+        const formData = new FormData();
+        
         formData.append('message', message);
-        for (let i = 0; i < files.length; i++) {
-            formData.append('attachments[]', files[i]);
+        
+        // Добавляем файлы в formData
+        if (files && files.length > 0) {
+            for (let i = 0; i < files.length; i++) {
+                formData.append('attachments[]', files[i]);
+            }
         }
+        
         try {
-            const response = await fetch(`/chats/${currentChatType}/${currentChatId}/messages`, {
+            const r = await fetch(`/chats/${currentChatType}/${currentChatId}/messages`, {
                 method: 'POST',
                 headers: { 'X-CSRF-TOKEN': csrfToken },
                 body: formData,
             });
-            let data;
-            const contentType = response.headers.get('content-type') || '';
-            if (contentType.indexOf('application/json') !== -1) {
-                data = await response.json();
-            } else {
-                const text = await response.text();
-                if (text.trim().substr(0, 4) === '<!--') {
-                    // Если получен HTML, возможно, сессия истекла или требуется переавторизация
-                    alert('Произошла ошибка авторизации. Перезагрузите страницу.');
-                    window.location.reload();
-                    return;
-                }
-                throw new Error(`Unexpected response: ${text}`);
+            if (!r.ok) {
+                const errText = await r.text();
+                throw new Error(errText);
             }
+            const data = await r.json();
             if (data.message) {
                 renderMessages([data.message], data.message.sender_id, loadedMessageIds, csrfToken, currentChatType, currentChatId);
                 window.lastLoadedMessageId = data.message.id;
                 chatMessageInput.value = '';
-                fileInput.value = '';
+                document.querySelector('.file-input').value = '';
+                
+                // Очищаем превью файлов после отправки
+                const filePreview = document.querySelector('.file-preview');
+                if (filePreview) {
+                    filePreview.innerHTML = '';
+                    filePreview.style.display = 'none';
+                }
             } else {
-                alert(data.error || 'Ошибка при отправке сообщения');
+                showToast(data.error || 'Ошибка при отправке сообщения');
             }
         } catch (e) {
+            showToast('Ошибка при отправке сообщения: ' + e.message);
             console.error('Ошибка при отправке сообщения:', e);
-            alert('Ошибка при отправке сообщения: ' + e.message);
         } finally {
-            sendMessageButton.disabled = false; // разблокировка кнопки
+            sendMessageButton.disabled = false;
         }
     }
 
+    // Функция пометки сообщений как прочитанных
     function markMessagesAsRead(chatId, chatType) {
         fetch(`/chats/${chatType}/${chatId}/mark-read`, {
             method: 'POST',
@@ -161,84 +209,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }).catch(e => console.error('Ошибка при пометке сообщений как прочитанных:', e));
     }
 
-    // Добавляем функцию для подписки на чат с использованием Laravel Echo
-    function subscribeToChat(chatId, chatType) {
-        if (window.Echo) {
-            window.Echo.channel(`chat.${chatType}.${chatId}`)
-                .listen('MessageSent', event => {
-                    console.log('Новое сообщение через веб-сокет:', event);
-                    // Добавляем полученное сообщение, если его ещё нет
-                    if (!loadedMessageIds.has(event.message.id)) {
-                        renderMessages([event.message], currentUserId, loadedMessageIds, csrfToken, currentChatType, currentChatId);
-                        markMessagesAsRead(chatId, chatType);
-                    }
-                });
-            // Обработка ошибок соединения и автоматическое переподключение
-            window.Echo.connector.socket.on('error', error => {
-                console.error('WebSocket Error:', error);
-            });
-            window.Echo.connector.socket.on('reconnect_attempt', () => {
-                console.log('Попытка переподключения к WebSocket...');
-            });
-        }
-        // ...existing code or fallback...
+    // Функция получения id последнего отображённого сообщения
+    function getLastMessageId() {
+        const lastMsg = document.querySelector('#chat-messages .message:last-child');
+        return lastMsg ? parseInt(lastMsg.getAttribute('data-id')) : 0;
     }
-
-    // Изменяем функцию периодической проверки новых сообщений
-    setInterval(() => {
-        if (currentChatId && currentChatType) {
-            const chatMessagesContainer = document.getElementById('chat-messages');
-            if (!chatMessagesContainer) return;
-            
-            const chatMessagesList = chatMessagesContainer.querySelector('ul');
-            if (!chatMessagesList) return;
-            
-            // Используем lastLoadedMessageId вместо поиска последнего элемента
-            const lastMessageId = window.lastLoadedMessageId || 0;
-            
-            fetch(`/chats/${currentChatType}/${currentChatId}/new-messages`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json', // добавлено для возврата JSON
-                    'X-CSRF-TOKEN': csrfToken,
-                },
-                body: JSON.stringify({
-                    last_message_id: lastMessageId
-                }),
-            })
-            .then(r => {
-                const contentType = r.headers.get('content-type');
-                if (contentType && contentType.indexOf('application/json') !== -1) {
-                    return r.json();
-                }
-                return r.text().then(text => { throw new Error(text); });
-            })
-            .then(data => {
-                if (data.messages && data.messages.length > 0) {
-                    // Обновляем lastLoadedMessageId на основе новых сообщений
-                    const lastMsg = data.messages[data.messages.length - 1];
-                    window.lastLoadedMessageId = lastMsg.id;
-                    
-                    renderMessages(data.messages, data.current_user_id, loadedMessageIds, csrfToken, currentChatType, currentChatId);
-                    markMessagesAsRead(currentChatId, currentChatType);
-                }
-            })
-            .catch(e => {
-                console.error('Ошибка при получении новых сообщений:', e);
-            });
-        }
-    }, 2000); // Проверка новых сообщений каждые 2 секунды
-
-    // Периодический запрос для обновления статуса доставки (delivered)
-    setInterval(() => {
-        if (currentChatId && currentChatType) {
-            fetch(`/chats/${currentChatType}/${currentChatId}/mark-delivered`, {
-                method: 'POST',
-                headers: { 'X-CSRF-TOKEN': csrfToken },
-            }).catch(e => console.error('Ошибка при обновлении статуса доставки:', e));
-        }
-    }, 5000);
 
     // Функция debounce
     function debounce(func, delay) {
@@ -249,105 +224,42 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // Кэширование DOM-элементов example:
-    const chatListElem = document.getElementById('chat-list');
-    if(chatListElem){
-        chatListElem.addEventListener('click', event => {
-            const li = event.target.closest('li');
-            if (!li) return;
-            const chatId = li.getAttribute('data-chat-id');
-            const chatType = li.getAttribute('data-chat-type');
-            if(currentChatId === chatId && currentChatType === chatType) return;
+    // Функция отображения уведомлений
+    function showToast(message) {
+        // Минимальная реализация для устранения ошибки
+        console.log('Toast message:', message);
+    }
+
+    // Обработчики событий
+    const chatList = document.getElementById('chat-list');
+    if (chatList) {
+        chatList.addEventListener('click', (event) => {
+            const chatElement = event.target.closest('li');
+            if (!chatElement) return;
+            const chatId = chatElement.getAttribute('data-chat-id');
+            const chatType = chatElement.getAttribute('data-chat-type');
+            if (currentChatId === chatId && currentChatType === chatType) return;
             loadMessages(chatId, chatType);
+            // Закрываем бургер-меню при выборе чата на мобильной версии
+            if (window.innerWidth <= 768) {
+                const userList = document.querySelector('.user-list');
+                const chatBox = document.querySelector('.chat-box');
+                if (userList && chatBox) {
+                    userList.classList.remove('active');
+                    chatBox.classList.add('active');
+                    userList.classList.add('inactive');
+                    chatBox.classList.add('active');
+                }
+            }
         });
     }
 
-    const searchInput = document.getElementById('search-chats');
-    const searchResults = document.getElementById('search-results');
-    if (searchInput) {
-        searchInput.addEventListener('input', debounce(function() {
-            const query = searchInput.value.trim().toLowerCase();
-            if (query === '') {
-                searchResults.style.display = 'none';
-                Array.from(chatList.children).forEach(chat => { chat.style.display = 'flex'; });
-            } else {
-                Array.from(chatList.children).forEach(chat => {
-                    const chatName = chat.querySelector('h5').textContent.toLowerCase();
-                    chat.style.display = chatName.includes(query) ? 'flex' : 'none';
-                });
-                fetch(`/chats/search`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken
-                    },
-                    body: JSON.stringify({ query: query })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    let resultsHTML = '';
-                    if (data.chats && data.chats.length > 0) {
-                        resultsHTML += '<h5>Чаты</h5><ul>';
-                        data.chats.forEach(chat => {
-                            resultsHTML += `<li data-chat-id="${chat.id}" data-chat-type="${chat.type}">${chat.name}</li>`;
-                        });
-                        resultsHTML += '</ul>';
-                    }
-                    if (data.messages && data.messages.length > 0) {
-                        resultsHTML += '<h5>Сообщения</h5><ul>';
-                        data.messages.forEach(msg => {
-                            let chatId = msg.chat_id;
-                            let chatType = "group";
-                            if (!chatId) {
-                                chatType = "personal";
-                                chatId = (msg.sender_id == currentUserId ? msg.receiver_id : msg.sender_id);
-                            }
-                            resultsHTML += `<li data-chat-id="${chatId}" data-chat-type="${chatType}" data-message-id="${msg.id}">
-                                <strong>${msg.sender_name}:</strong> ${msg.message.substring(0, 50)}...
-                                <br><small>${formatTime(msg.created_at)}</small>
-                            </li>`;
-                        });
-                        resultsHTML += '</ul>';
-                    }
-                    searchResults.innerHTML = resultsHTML;
-                    searchResults.style.display = resultsHTML.trim() === '' ? 'none' : 'block';
-                    Array.from(searchResults.querySelectorAll('li')).forEach(item => {
-                        item.addEventListener('click', function() {
-                            const chatId = this.getAttribute('data-chat-id');
-                            const chatType = this.getAttribute('data-chat-type');
-                            const messageId = this.getAttribute('data-message-id');
-                            loadMessages(chatId, chatType);
-                            searchInput.value = '';
-                            searchResults.style.display = 'none';
-                            if (messageId) {
-                                setTimeout(() => {
-                                    // Здесь можно реализовать выделение сообщения
-                                }, 1000);
-                            }
-                        });
-                    });
-                })
-                .catch(e => console.error('Ошибка поиска:', e));
-            }
-        }, 300));
-    }
-
-    function attachFileListener() {
-        const attachButton = document.querySelector('.attach-file');
-        const fileInput = document.querySelector('.file-input');
-        if (attachButton && fileInput) {
-            attachButton.addEventListener('click', () => { fileInput.click(); });
-            fileInput.addEventListener('change', () => {
-                if (fileInput.files.length > 0) { sendMessage(); }
-            });
-        }
-    }
-
-    if (document.readyState !== 'loading') { attachFileListener(); }
-    else { document.addEventListener('DOMContentLoaded', attachFileListener); }
-
     const sendMessageButton = document.getElementById('send-message');
     const chatMessageInput = document.getElementById('chat-message');
+    
+    // Инициализация emoji-picker для textarea
+    initializeEmojiPicker(chatMessageInput);
+
     if (sendMessageButton) {
         sendMessageButton.addEventListener('click', sendMessage);
     }
@@ -357,84 +269,44 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    initializeEmojiPicker(chatMessageInput);
-
-    const firstChat = document.getElementById('chat-list')?.querySelector('li');
-    if (firstChat) {
-        firstChat.click();
-    }
-
-    const togglePinnedButton = document.getElementById('toggle-pinned');
-    if (togglePinnedButton) {
-        togglePinnedButton.addEventListener('click', () => {
-            pinnedOnly = !pinnedOnly;
-            togglePinnedButton.textContent = pinnedOnly ? 'Показать все сообщения' : 'Показать только закрепленные';
-            filterMessages(pinnedOnly);  // Передаем параметр pinnedOnly
+    const togglePinnedBtn = document.getElementById('toggle-pinned');
+    let showPinnedOnly = false;
+    if (togglePinnedBtn) {
+        togglePinnedBtn.addEventListener('click', function() {
+            showPinnedOnly = !showPinnedOnly;
+            // Вызываем фильтрацию с параметром true/false
+            filterMessages(showPinnedOnly);
+            // Меняем текст кнопки
+            togglePinnedBtn.textContent = showPinnedOnly
+                ? "Показать все сообщения"
+                : "Показать только закрепленные";
         });
     }
 
-    checkForNewMessages();
-
-    // Убираем старый обработчик скролла
-    // ...existing scroll event listener... 
-
-    // Добавляем бесконечную прокрутку через IntersectionObserver
-    const chatMessagesContainer = document.getElementById('chat-messages');
-    if (chatMessagesContainer) {
-        const sentinel = document.createElement('div');
-        sentinel.id = 'scroll-sentinel';
-        chatMessagesContainer.appendChild(sentinel);
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const currentPage = parseInt(chatMessagesContainer.getAttribute('data-page') || '1');
-                    if (currentChatId && currentChatType) {
-                        fetchJSON(`/chats/${currentChatType}/${currentChatId}/messages?page=${currentPage + 1}`)
-                            .then(data => {
-                                if (data.messages && data.messages.length > 0) {
-                                    renderMessages(data.messages, currentUserId, loadedMessageIds, csrfToken, currentChatType, currentChatId);
-                                    chatMessagesContainer.setAttribute('data-page', currentPage + 1);
-                                }
-                            })
-                            .catch(err => console.error('Ошибка подгрузки старых сообщений:', err));
-                    } else {
-                        console.warn('Неверные параметры чата: currentChatId или currentChatType не установлены');
-                    }
+    // Функция проверки и обновления сообщений с повышенной надежностью
+    function setupChatUpdateInterval() {
+        let chatUpdateTimer = setInterval(() => {
+            try {
+                if (window.fetchNewMessages && typeof window.fetchNewMessages === 'function') {
+                    window.fetchNewMessages();
                 }
-            });
-        }, {
-            root: chatMessagesContainer,
-            threshold: 1.0
-        });
-        observer.observe(sentinel);
-    }
-
-    function pinMessage(messageId) {
-        fetch(`/chats/${currentChatType}/${currentChatId}/messages/${messageId}/pin`, {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken 
-            },
-            body: JSON.stringify({ })
-        })
-        .then(r => {
-            if (!r.ok) {
-                return r.text().then(text => { throw new Error(text); });
+            } catch (error) {
+                console.error('Ошибка при обновлении чата:', error);
             }
-            return r.json();
-        })
-        .then(data => {
-            // ...обработка успешного закрепления...
-        })
-        .catch(e => console.error('Ошибка при закреплении сообщения:', e));
+        }, 1000);
+        
+        // Сохраняем таймер для возможной очистки в будущем
+        window.chatUpdateTimer = chatUpdateTimer;
+        
+        // Запускаем первичное обновление
+        if (window.fetchNewMessages) {
+            window.fetchNewMessages();
+        }
     }
-
-    function unpinMessage(messageId) {
-        fetch(`/chats/${currentChatType}/${currentChatId}/messages/${messageId}/unpin`, {
-            method: 'POST',
-            headers: { 'X-CSRF-TOKEN': csrfToken },
-        }).catch(e => console.error('Ошибка при откреплении сообщения:', e));
-    }
-
+    
+    // Инициализируем интервал обновления
+    setupChatUpdateInterval();
 });
+
+// Удаляем существующий setInterval в конце файла, так как его заменил setupChatUpdateInterval
+// setInterval(() => {...}, 1000);

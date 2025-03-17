@@ -65,4 +65,12 @@ class Chat extends Model
     {
         return $this->hasMany(Message::class)->where('is_pinned', true);
     }
+
+    /**
+     * Участники чата.
+     */
+    public function participants()
+    {
+        return $this->belongsToMany(\App\Models\User::class, 'chat_user', 'chat_id', 'user_id');
+    }
 }

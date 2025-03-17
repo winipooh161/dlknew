@@ -13,19 +13,7 @@
         window.deleteImgUrl = "{{ asset('storage/icon/deleteMesg.svg') }}";
     </script>
 
-    <!-- Регистрация Service Worker для Firebase Messaging -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/firebase-messaging-sw.js')
-                .then(registration => {
-                    console.log('Service Worker зарегистрирован:', registration.scope);
-                })
-                .catch(err => {
-                    console.error('Ошибка регистрации Service Worker:', err);
-                });
-        }
-    </script>
-
+  
     <script>
         // Имитируем онлайн-статус (при реальной реализации можно получить данные через API)
         window.onlineStatus = function(userId) {
@@ -107,7 +95,7 @@
                     <button id="toggle-pinned" class="toggle-pinned" style="margin-left:10px;">Показать только
                         закрепленные</button>
                 </div>
-                <div class="chat-messages" id="chat-messages">
+                <div class="chat-messages" id="chat-messages" data-chat-type="support" data-chat-id="{{ $supportChat->id ?? 'null' }}">
                     <ul></ul>
                 </div>
                 <div class="chat-input" style="position: relative;">
@@ -132,7 +120,7 @@
                 <div class="chat-header">
                     {{ $dealChat->name }}
                 </div>
-                <div class="chat-messages" id="chat-messages">
+                <div class="chat-messages" id="chat-messages" data-chat-type="deal" data-chat-id="{{ $dealChat->id ?? 'null' }}">
                     <ul></ul>
                 </div>
                 <div class="chat-input" style="position: relative;">
@@ -148,13 +136,13 @@
             </div>
         </div>
     @else
-        <div class="chat-container">
+        <div class="chat-container" data-chat-id="{{ $activeChatId ?? '1' }}" data-chat-type="{{ $activeChatType ?? 'group' }}">
             <div class="user-list" id="chat-list-container">
                 <h4>Все чаты</h4>
                 <input type="text" id="search-chats" placeholder="Поиск по чатам и сообщениям..." />
-                @if (auth()->user()->status == 'coordinator' || auth()->user()->status == 'admin')
+                {{-- @if (auth()->user()->status == 'coordinator' || auth()->user()->status == 'admin')
                     <a href="{{ route('chats.group.create') }}" class="create__group">Создать групповой чат</a>
-                @endif
+                @endif --}}
                 <ul id="chat-list">
                     @if (isset($chats) && count($chats))
                         @foreach ($chats as $chat)
@@ -193,14 +181,15 @@
             </div>
             <div class="chat-box">
                 <div class="chat-header">
-
-                    <span id="chat-header">Выберите чат для общения</span>
-
+                    <span id="chat-header">Мой личный чат</span>
+                    <div class="burger-users">
+                        <span></span> <span></span> <span></span>
+                    </div>
                     <!-- Кнопка фильтра для стандартного режима -->
                     <button id="toggle-pinned" class="toggle-pinned" style="margin-left:10px;">Показать только
                         закрепленные</button>
                 </div>
-                <div class="chat-messages" id="chat-messages">
+                <div class="chat-messages" id="chat-messages" data-chat-type="group" data-chat-id="{{ $activeChatId ?? '1' }}">
                     <ul></ul>
                 </div>
                 <div class="chat-input" style="position: relative;">
@@ -220,43 +209,74 @@
 
     @endif
 
+    @if (isset($supportChat) && $supportChat)
+        <div class="chat-container support-chat">
+            <div class="chat-box">
+                <div class="chat-messages" id="chat-messages" data-chat-type="support" data-chat-id="{{ $supportChat->id ?? 'null' }}">
+                    <ul></ul>
+                </div>
+            </div>
+        </div>
+    @endif
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            import('{{ Vite::asset("resources/js/chat-utils.js") }}').then(module => {
+                window.fetchNewMessages = module.fetchNewMessages;
+                setInterval(window.fetchNewMessages, 1000);
+                window.fetchNewMessages();
+            }).catch(err => {
+                console.error('Ошибка при импорте chat-utils.js:', err);
+            });
+        });
+    </script>
+      <!-- Стили для вложений и предпросмотра файлов -->
+      <style>
+      
+    </style>
+   <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        if (window.innerWidth < 768) { // Код выполняется только если ширина экрана меньше 768px
+            const burger = document.querySelector('.burger-users');
+            const userList = document.querySelector('.user-list');
+            if (burger && userList) {
+                burger.addEventListener('click', () => {
+                    if(userList.style.transform === 'translateX(0%)') {
+                        userList.style.transform = 'translateX(-100%)';
+                    } else {
+                        userList.style.transform = 'translateX(0%)';
+                    }
+                });
+            }
+            // При выборе чата скрываем меню
+            const chatItems = document.querySelectorAll('.user-list li');
+            chatItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    if(userList) {
+                        userList.style.transform = 'translateX(-100%)';
+                    }
+                });
+            });
+        }
+    });
+    </script>
+    <script>
+    // Фильтрация чатов по введенному запросу
+    document.addEventListener('DOMContentLoaded', () => {
+        const searchInput = document.getElementById('search-chats');
+        const chatItems = document.querySelectorAll('#chat-list li');
+        if(searchInput) {
+            searchInput.addEventListener('input', () => {
+                const query = searchInput.value.trim().toLowerCase();
+                chatItems.forEach(item => {
+                    const nameElement = item.querySelector('.user-list__info h5');
+                    const chatName = nameElement ? nameElement.textContent.toLowerCase() : '';
+                    item.style.display = chatName.includes(query) ? '' : 'none';
+                });
+            });
+        }
+    });
+    </script>
+    <style>
+       
+    </style>
 </body>
-
-<style>
-    .image-collage {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 5px;
-    }
-
-    .collage-item {
-        flex: 1 1 calc(33.333% - 10px);
-        max-width: calc(33.333% - 10px);
-    }
-
-    .collage-item img {
-        width: 100%;
-        height: auto;
-        border-radius: 4px;
-    }
-
-    .attachment-file {
-        display: flex;
-        align-items: center;
-        padding: 8px;
-        background-color: #f5f5f5;
-        border-radius: 4px;
-        margin: 5px 0;
-    }
-
-    .attachment-file a {
-        margin-left: 10px;
-        color: #007bff;
-        text-decoration: none;
-        word-break: break-all;
-    }
-
-    .attachment-icon {
-        font-size: 20px;
-    }
-</style>

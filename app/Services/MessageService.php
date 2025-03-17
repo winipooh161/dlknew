@@ -30,20 +30,13 @@ class MessageService
     public function getChatMessages(string $type, int $id, int $currentUserId, int $perPage = 50): LengthAwarePaginator
     {
         if ($type === 'personal') {
-            $otherUser = User::findOrFail($id);
-            
-            $messages = Message::where(function ($q) use ($otherUser, $currentUserId) {
-                    $q->where('sender_id', $currentUserId)
-                      ->where('receiver_id', $otherUser->id);
-                })
-                ->orWhere(function ($q) use ($otherUser, $currentUserId) {
-                    $q->where('sender_id', $otherUser->id)
-                      ->where('receiver_id', $currentUserId);
-                })
+            // Используем getOrCreatePersonalChat для получения корректного chat_id
+            $chat = $this->getOrCreatePersonalChat($currentUserId, $id);
+            $messages = Message::where('chat_id', $chat->id)
                 ->orderBy('created_at', 'desc')
                 ->with('sender')
                 ->paginate($perPage);
-            // Изменено: сортировка сообщений по возрастанию времени создания
+            // Сортировка сообщений по возрастанию времени создания
             $messages->setCollection($messages->getCollection()->sortBy('created_at'));
             return $messages;
         } elseif ($type === 'group') {
@@ -123,30 +116,33 @@ class MessageService
     }
 
     /**
-     * Получает или создает личный чат между двумя пользователями.
+     * Создает или возвращает существующий личный чат между двумя пользователями.
      *
-     * @param int $senderId
-     * @param int $receiverId
-     * @return \App\Models\Chat
+     * @param int $userId
+     * @param int $relatedId
+     * @return Chat
      */
-    protected function getOrCreatePersonalChat(int $senderId, int $receiverId): Chat
+    public function getOrCreatePersonalChat(int $userId, int $relatedId): Chat
     {
-        $chat = Chat::where(function ($query) use ($senderId, $receiverId) {
-            $query->where('sender_id', $senderId)
-                ->where('receiver_id', $receiverId);
-        })->orWhere(function ($query) use ($senderId, $receiverId) {
-            $query->where('sender_id', $receiverId)
-                ->where('receiver_id', $senderId);
+        $chat = Chat::where(function ($query) use ($userId, $relatedId) {
+            $query->where('sender_id', $userId)
+                ->where('receiver_id', $relatedId);
+        })->orWhere(function ($query) use ($userId, $relatedId) {
+            $query->where('sender_id', $relatedId)
+                ->where('receiver_id', $userId);
         })->where('type', 'personal')->first();
 
         if (!$chat) {
+            Log::info('Создание нового личного чата', ['senderId' => $userId, 'receiverId' => $relatedId]);
             $chat = Chat::create([
-                'sender_id' => $senderId,
-                'receiver_id' => $receiverId,
+                'sender_id' => $userId,
+                'receiver_id' => $relatedId,
                 'type' => 'personal',
                 'name' => 'Personal Chat', // Можно сделать имя динамическим
                 'slug' => Str::uuid(),
             ]);
+        } else {
+            Log::info('Личный чат найден', ['chatId' => $chat->id]);
         }
 
         return $chat;

@@ -14,7 +14,9 @@ use App\Http\Controllers\SmetsController;
 use App\Http\Controllers\DealsController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\AdminController;
-use Chatify\ChatifyMessenger;
+// Используемые контроллеры Firebase удалены
+// use App\Http\Controllers\FcmController;
+
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\URL;
 
@@ -141,9 +143,11 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/support/chat/{id}/new-messages', [SupportController::class, 'getNewMessages'])->name('support.chat.newMessages');
     Route::post('/support/chat/{id}/mark-read', [SupportController::class, 'markMessagesAsRead'])->name('support.chat.markMessagesAsRead');
     Route::get('/support', [SupportController::class, 'index'])->name('support');
-    Route::post('/firebase/update-token', [App\Http\Controllers\FirebaseController::class, 'updateToken'])->name('firebase.updateToken');
-    Route::post('/firebase/send-notification', [ProfileController::class, 'sendFirebaseNotification'])->name('firebase.sendNotification');
+   
+    // Удаляем маршруты для Firebase
+    // Route::post('/firebase/send-notification', [ProfileController::class, 'sendFirebaseNotification'])->name('firebase.sendNotification');
     Route::get('/chats/unread-counts', [ChatController::class, 'getUnreadCounts'])->name('chats.unreadCounts');
+    Route::get('/chats/{type}/{id}/new-messages', [ChatController::class, 'getNewMessages'])->name('chats.new-messages');
 });
 
 // Общие маршруты для чатов (личные и групповые)
@@ -165,7 +169,11 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/chats/search', [ChatController::class, 'search'])->name('chats.search');
 });
 
-
+// Маршруты для FCM
+// Route::middleware(['auth'])->group(function () {
+//     Route::post('/fcm/update-token', [FcmController::class, 'updateToken'])->name('fcm.update-token');
+//     Route::post('/api/fcm/update-token', [FcmController::class, 'updateToken'])->name('fcm.update-token.api'); // Добавляем API маршрут
+// });
 
 Route::middleware(['auth', 'status:admin'])->group(function () {
     Route::get('/admin', [AdminController::class, 'index'])->name('admin');
@@ -210,3 +218,6 @@ Route::post('/deal/update/{id}', [DealsController::class, 'updateDeal'])
 // Маршрут для отображения модального окна сделки
 
     Route::post('/chats/{chat}/messages/{message}/pin', [ChatController::class, 'pinMessage']);
+    // Получение новых сообщений (для автообновления)
+    Route::post('/chats/{chatType}/{chatId}/new-messages', [ChatController::class, 'getNewMessages'])->name('chats.new-messages');
+    
