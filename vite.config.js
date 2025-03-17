@@ -43,7 +43,7 @@ export default defineConfig({
       overlay: false
     },
     cors: {
-      origin: 'https://lk',
+      origin: 'https://dlk.express-diz.ru/',
       credentials: true
     }
   },

@@ -44,7 +44,7 @@ return [
     | your application so that it is used when running Artisan tasks.
     |
     */
-    'url' => env('APP_URL', 'https://lk.express-diz.ru/'),
+    'url' => env('APP_URL', 'https://dlk.express-diz.ru/.express-diz.ru/'),
     'asset_url' => env('ASSET_URL', '/'),
     /*
     |--------------------------------------------------------------------------
