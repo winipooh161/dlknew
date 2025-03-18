@@ -153,13 +153,13 @@
                                         @if(!empty($chat['avatar_url']))
                                             <img src="{{ asset($chat['avatar_url']) }}" alt="{{ $chat['name'] }}" width="40" height="40" loading="lazy">
                                         @else
-                                            <img src="{{ asset('storage/avatars/group_default.png') }}" alt="{{ $chat['name'] }}" width="40" height="40" loading="lazy">
+                                            <img src="{{ asset('storage/avatars/group_default.svg') }}" alt="{{ $chat['name'] }}" width="40" height="40" loading="lazy">
                                         @endif
                                     @else
                                         @if(!empty($chat['avatar_url']))
                                             <img src="{{ asset($chat['avatar_url']) }}" alt="{{ $chat['name'] }}" width="40" height="40" loading="lazy">
                                         @else
-                                            <img src="{{ asset('storage/avatars/user_default.png') }}" alt="{{ $chat['name'] }}" width="40" height="40" loading="lazy">
+                                            <img src="{{ asset('storage/avatars/group_default.svg') }}" alt="{{ $chat['name'] }}" width="40" height="40" loading="lazy">
                                         @endif
                                     @endif
                                 </div>

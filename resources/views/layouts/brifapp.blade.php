@@ -53,7 +53,7 @@
 
     'resources/js/message-actions.js',
     'resources/js/emoji-picker.js',
-    'resources/js/chat-utils.js','resources/js/chat-main.js'])
+    'resources/js/chat-utils.js'])
 <body>
    
     @if(session('success'))

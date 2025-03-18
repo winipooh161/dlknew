@@ -79,7 +79,81 @@ class ChatController extends Controller
         }
 
         try {
-            $chats = $this->chatService->getUserChats($user);
+            $personalChats = $this->getPersonalChats($user);
+            $chats = collect();
+
+            // Добавляем личные чаты в общий список, если они есть
+            foreach ($personalChats as $relatedUser) {
+                if ($relatedUser->chats->isNotEmpty()) {
+                    foreach ($relatedUser->chats as $chat) {
+                        $unreadCount = Message::where('chat_id', $chat->id)
+                            ->where('sender_id', $relatedUser->id)
+                            ->where('is_read', false)
+                            ->count();
+
+                        $chats->push([
+                            'id' => $chat->id,
+                            'type' => 'personal',
+                            'name' => $relatedUser->name,
+                            'avatar_url' => $relatedUser->avatar_url,
+                            'unread_count' => $unreadCount,
+                        ]);
+                    }
+                }
+            }
+
+            // Фильтруем групповые чаты в зависимости от роли пользователя
+            $groupChats = Chat::where('type', 'group');
+
+            switch ($user->status) {
+                case 'partner':
+                    $groupChats->whereHas('users', function ($query) use ($user) {
+                        $query->where('user_id', $user->id);
+                    });
+                    break;
+                case 'architect':
+                case 'designer':
+                case 'visualizer':
+                    $groupChats->whereHas('users', function ($query) use ($user) {
+                        $query->where('user_id', $user->id);
+                    });
+                    break;
+                case 'coordinator':
+                    // Для координатора показываем только те групповые чаты, где он является участником
+                    $groupChats->whereHas('users', function ($query) use ($user) {
+                        $query->where('user_id', $user->id);
+                    });
+                    break;
+                case 'admin':
+                    // Админ видит все групповые чаты, ничего не фильтруем
+                    break;
+                default:
+                    // Для остальных ролей не показываем групповые чаты
+                    $groupChats->where('id', -1); // Пустой запрос, чтобы ничего не вернуть
+                    break;
+            }
+
+            $groupChats = $groupChats->get();
+
+            // Добавляем групповые чаты в общий список
+            foreach ($groupChats as $chat) {
+                $unreadCount = Message::where('chat_id', $chat->id)
+                    ->where('sender_id', '!=', $user->id)
+                    ->where('is_read', false)
+                    ->count();
+
+                $chats->push([
+                    'id' => $chat->id,
+                    'type' => 'group',
+                    'name' => $chat->name,
+                    'avatar_url' => $chat->avatar_url,
+                    'unread_count' => $unreadCount,
+                ]);
+            }
+
+            // Сортируем чаты по дате последнего сообщения (если необходимо)
+            // $chats = $chats->sortByDesc('last_message_at');
+
         } catch (\Exception $e) {
             Log::error('Ошибка при формировании списка чатов', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return response()->json(['error' => 'Ошибка при формировании списка чатов.'], 500);

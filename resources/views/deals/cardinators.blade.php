@@ -33,7 +33,6 @@
     </div>
 </div>
 
-<!-- Основной контент -->
 <div class="deal" id="deal">
     <div class="deal__body">
         <div class="deal__cardinator__lists">
@@ -45,6 +44,8 @@
                             <th>Номер клиента</th>
                             <th>Сумма сделки</th>
                             <th>Статус</th>
+                            <!-- Добавляем новый заголовок -->
+                            <th>Партнер</th>
                             <th>Действия</th>
                         </tr>
                     </thead>
@@ -59,11 +60,29 @@
                                 </td>
                                 <td>{{ $dealItem->total_sum ?? 'Отсутствует' }}</td>
                                 <td>{{ $dealItem->status }}</td>
+                                <!-- Новая колонка с информацией Офис/Партнер -->
+                                <td>
+                                    @if($dealItem->office_partner_id)
+                                        <a href="{{ route('profile.view', $dealItem->office_partner_id) }}">
+                                            {{ \App\Models\User::find($dealItem->office_partner_id)->name ?? 'Не указан' }}
+                                        </a>
+                                    @else
+                                        Не указан
+                                    @endif
+                                </td>
                                 <td class="link__deistv">
-                                    <a href="#" onclick="event.preventDefault(); copyRegistrationLink('{{ route('register_by_deal', ['token' => $dealItem->registration_token]) }}')">
-                                        <img src="/storage/icon/link.svg" alt="Регистрационная ссылка">
-                                    </a>
-                                    <a href="{{ url('/chats') }}">
+                                    @if ($dealItem->registration_token)
+                                        <a href="{{ $dealItem->registration_token ? route('register_by_deal', ['token' => $dealItem->registration_token]) : '' }}"
+                                            onclick="event.preventDefault(); copyRegistrationLink(this.href)">
+                                            <img src="/storage/icon/link.svg" alt="Регистрационная ссылка">
+                                        </a>
+                                    @else
+                                        <a href="#">
+                                            <img src="/storage/icon/link.svg" alt="Регистрационная ссылка">
+                                        </a>
+                                    @endif
+                                    <!-- Изменяем ссылку на чат: используем ID чата сделки, полученный через связь $dealItem->chat -->
+                                    <a href="{{ url('/chats?active_chat=' . ($dealItem->chat ? $dealItem->chat->id : '')) }}" onclick="window.location.href=this.href;">
                                         <img src="/storage/icon/chat.svg" alt="Чат">
                                     </a>
                                     <a href="{{ $dealItem->link ? url($dealItem->link) : '#' }}">
@@ -71,12 +90,17 @@
                                     </a>
                                     @if (in_array(Auth::user()->status, ['coordinator', 'admin']))
                                         <a href="{{ route('deal.change_logs.deal', ['deal' => $dealItem->id]) }}"
-                                            class="btn btn-info btn-sm"> <img src="/storage/icon/log.svg" alt="Логи"></a>
+                                            class="btn btn-info btn-sm">
+                                            <img src="/storage/icon/log.svg" alt="Логи">
+                                        </a>
                                     @endif
                                     <!-- Кнопка редактирования с data-атрибутом -->
+                                  
+                                    @if (in_array(Auth::user()->status, ['coordinator', 'admin', 'partner']))
                                     <button type="button" class="edit-deal-btn" data-id="{{ $dealItem->id }}">
                                         <img src="/storage/icon/add.svg" alt="Редактировать">
                                     </button>
+                                @endif
                                 </td>
                             </tr>
                         @endforeach
@@ -87,13 +111,13 @@
                 <div class="faq__body__deal" id="all-deals-container">
                     <h4 class="flex">Все сделки</h4>
                     @if ($deals->isEmpty())
-                    <div class="faq_block__deal faq_block-blur brifs__button__create-faq_block__deal">
-                        @if (in_array(Auth::user()->status, ['coordinator', 'admin', 'partner']))
-                            <button onclick="window.location.href='{{ route('deals.create') }}'">
-                                <img src="/storage/icon/add.svg" alt="Создать сделку">
-                            </button>
-                        @endif
-                    </div>
+                        <div class="faq_block__deal faq_block-blur brifs__button__create-faq_block__deal">
+                            @if (in_array(Auth::user()->status, ['coordinator', 'admin', 'partner']))
+                                <button onclick="window.location.href='{{ route('deals.create') }}'">
+                                    <img src="/storage/icon/add.svg" alt="Создать сделку">
+                                </button>
+                            @endif
+                        </div>
                     @else
                         <div class="faq_block__deal faq_block-blur brifs__button__create-faq_block__deal">
                             @if (in_array(Auth::user()->status, ['coordinator', 'admin', 'partner']))
@@ -107,10 +131,11 @@
                                 <div class="faq_item__deal">
                                     <div class="faq_question__deal flex between">
                                         <div class="faq_question__deal__info">
-                                           
+
                                             @if ($dealItem->avatar_path)
                                                 <div class="deal__avatar deal__avatar__cardinator">
-                                                    <img src="{{ asset('storage/' . $dealItem->avatar_path) }}" alt="Avatar">
+                                                    <img src="{{ asset('storage/' . $dealItem->avatar_path) }}"
+                                                        alt="Avatar">
                                                 </div>
                                             @endif
                                             <div class="deal__cardinator__info">
@@ -119,34 +144,44 @@
                                                 </div>
                                                 <h4>{{ $dealItem->name }}</h4>
                                                 <p class="doptitle">
-                                                    <h4>{{ $dealItem->project_number }}</h4>
+                                                <h4>{{ $dealItem->project_number }}</h4>
                                                 </p>
                                                 <p>Телефон:
                                                     <a href="tel:{{ $dealItem->client_phone }}">
                                                         {{ $dealItem->client_phone }}
                                                     </a>
                                                 </p>
+                                                <!-- Добавляем информацию Офис/Партнер -->
+                                                <p>Партнер:
+                                                    @if($dealItem->office_partner_id)
+                                                        <a href="{{ route('profile.view', $dealItem->office_partner_id) }}">
+                                                            {{ \App\Models\User::find($dealItem->office_partner_id)->name ?? 'Не указан' }}
+                                                        </a>
+                                                    @else
+                                                        Не указан
+                                                    @endif
+                                                </p>
                                             </div>
                                         </div>
                                         <ul>
                                             <li>
                                                 @php
-                                                    // Временно отключаем поиск чата, пока не исправим структуру таблицы
-                                                    $groupChat = null;
-                                                    // Закомментируем проблемный код
-                                                    // $groupChat = \App\Models\Chat::where('type', 'group')
-                                                    //    ->first();
+                                                    // Убираем переменную $groupChat
                                                 @endphp
-                                                <a href="{{ $groupChat ? url('/chats?active_chat=' . $groupChat->id) : '#' }}">
+                                                <a href="{{ url('/chats?active_chat=' . ($dealItem->chat ? $dealItem->chat->id : '')) }}" onclick="window.location.href=this.href;">
                                                     <img src="/storage/icon/chat.svg" alt="Чат">
                                                     <div class="icon">Чат</div>
                                                 </a>
                                             </li>
                                             <li>
-                                                <button type="button" class="edit-deal-btn" data-id="{{ $dealItem->id }}">
-                                                    <img src="/storage/icon/create__blue.svg" alt="">
-                                                    <span>Изменить</span>
-                                                </button>
+                                                @if (in_array(Auth::user()->status, ['coordinator', 'admin', 'partner']))
+                                                    <button type="button" class="edit-deal-btn"
+                                                        data-id="{{ $dealItem->id }}">
+                                                        <img src="/storage/icon/create__blue.svg" alt="">
+                                                        <span>Изменить</span>
+                                                    </button>
+                                                @endif
+
                                             </li>
                                         </ul>
                                     </div>
@@ -191,15 +226,15 @@
             var $container = $(container);
             var $blocks = $container.find('.faq_block__deal');
             var total = $blocks.length;
-            
+
             if (total <= perPage) {
                 $blocks.show();
                 return;
             }
-            
+
             $blocks.hide();
             $blocks.slice(0, perPage).show();
-            
+
             $(paginationContainer).pagination({
                 items: total,
                 itemsOnPage: perPage,
@@ -213,7 +248,7 @@
                 }
             });
         }
-        
+
         // Вызов функции пагинации для блочного представления
         paginateContainer('#all-deals-container', '#all-deals-pagination', 6);
 
@@ -255,31 +290,33 @@
                     success: function(response) {
                         // Сохраняем модальное окно в кэш
                         modalCache[dealId] = response.html;
-                        
+
                         // Вставляем HTML модального окна
                         $modalContainer.html(response.html);
-                        
+
                         // Инициализируем Select2 для dropdowns
                         initSelect2();
-                        
+
                         // Показываем модальное окно
                         $("#editModal").show().addClass('show');
-                        
+
                         // Обработчики закрытия модального окна
                         $('#closeModalBtn').on('click', function() {
                             $("#editModal").removeClass('show').hide();
                         });
-                        
+
                         $("#editModal").on('click', function(e) {
-                            if (e.target === this) $(this).removeClass('show').hide();
+                            if (e.target === this) $(this).removeClass('show')
+                            .hide();
                         });
-                        
+
                         // Инициализация других JS-функций для модального окна
                         initModalFunctions();
                     },
                     error: function(xhr, status, error) {
                         console.error("Ошибка загрузки данных сделки:", status, error);
-                        alert("Ошибка загрузки данных сделки. Попробуйте обновить страницу.");
+                        alert(
+                            "Ошибка загрузки данных сделки. Попробуйте обновить страницу.");
                     },
                     complete: function() {
                         // Скрываем индикатор загрузки
@@ -301,7 +338,8 @@
         $('#dealModalContainer').on('click', '#editModal', function(e) {
             if (e.target === this) {
                 $(this).removeClass('show').hide();
-                history.pushState("", document.title, window.location.pathname + window.location.search);
+                history.pushState("", document.title, window.location.pathname + window.location
+                .search);
             }
         });
 
@@ -309,42 +347,42 @@
         function initModalFunctions() {
             var modules = $("#editModal fieldset.module__deal");
             var buttons = $("#editModal .button__points button");
-            
+
             // Настройка переключения между вкладками
             modules.css({
                 display: "none",
                 opacity: "0",
                 transition: "opacity 0.3s ease-in-out"
             });
-            
+
             // Показываем активную вкладку (Лента)
-            var activeModule = $("#module-feed");
+            var activeModule = $("#module-zakaz");
             activeModule.css({
                 display: "flex"
             });
-            
+
             setTimeout(function() {
                 activeModule.css({
                     opacity: "1"
                 });
             }, 10);
-            
+
             // Обработчик нажатия на кнопки вкладок
             buttons.on('click', function() {
                 var targetText = $(this).data('target').trim();
                 buttons.removeClass("buttonSealaActive");
                 $(this).addClass("buttonSealaActive");
-                
+
                 modules.css({
                     opacity: "0"
                 });
-                
+
                 setTimeout(function() {
                     modules.css({
                         display: "none"
                     });
                 }, 300);
-                
+
                 setTimeout(function() {
                     modules.each(function() {
                         var legend = $(this).find("legend").text().trim();
@@ -361,7 +399,7 @@
                     });
                 }, 300);
             });
-            
+
             // Обработчик отправки формы ленты
             $("#feed-form").on("submit", function(e) {
                 e.preventDefault();
@@ -390,16 +428,17 @@
                     alert("Не удалось определить сделку. Пожалуйста, обновите страницу.");
                 }
             });
-            
+
             // Обработчик для файловых полей
             $('input[type="file"]').on('change', function() {
                 var file = this.files[0];
                 var fileName = file ? file.name : "";
                 var fieldName = $(this).attr('id');
                 var linkDiv = $('#' + fieldName + 'Link');
-                
+
                 if (fileName) {
-                    linkDiv.html('<a href="' + URL.createObjectURL(file) + '" target="_blank">' + fileName + '</a>');
+                    linkDiv.html('<a href="' + URL.createObjectURL(file) + '" target="_blank">' +
+                        fileName + '</a>');
                 }
             });
         }
@@ -411,11 +450,7 @@
             if (e.target === this) $(this).removeClass('show').hide();
         });
 
-        $('.toggle-edit-btn').on('click', function() {
-            var disabled = $editForm.find('#nameField').prop('disabled');
-            $editForm.find('input,select,textarea,button[type="submit"]').prop('disabled', !disabled);
-            $(this).text(disabled ? 'Отменить' : 'Изменить');
-        });
+      
 
         var modules = $("#editModal fieldset.module__deal");
         var buttons = $("#editModal .button__points button");
@@ -480,8 +515,17 @@
             });
             $('#client_timezone, #cityField').select2({
                 data: selectData,
-                placeholder: "-- Выберите город --",
+                placeholder: "-- Выберите город/часовой пояс --", // Изменён placeholder
                 allowClear: true,
+                minimumInputLength: 1, // Включён поиск по городам
+                dropdownParent: $('#editModal')
+            });
+            // Инициализация select2 для поля "client_city" с обработкой поиска при вводе от 1 символа
+            $('#client_city').select2({
+                data: selectData,
+                placeholder: "-- Выберите город/часовой пояс --",
+                allowClear: true,
+                minimumInputLength: 1,
                 dropdownParent: $('#editModal')
             });
         }).fail(function(err) {
@@ -518,7 +562,8 @@
                     },
                     success: function(response) {
                         $("#feed-content").val("");
-                        var avatarUrl = response.avatar_url ? response.avatar_url : "/storage/group_default.svg";
+                        var avatarUrl = response.avatar_url ? response.avatar_url :
+                            "/storage/group_default.svg";
                         $("#feed-posts-container").prepend(`
                         <div class="feed-post">
                             <div class="feed-post-avatar">
@@ -557,7 +602,7 @@
     });
 
     function copyRegistrationLink(regUrl) {
-        if(regUrl) {
+        if (regUrl) {
             navigator.clipboard.writeText(regUrl).then(function() {
                 alert('Регистрационная ссылка скопирована: ' + regUrl);
             }).catch(function(err) {
@@ -572,9 +617,11 @@
     .select2-container {
         width: 100% !important;
     }
+
     .select2-selection--multiple {
         min-height: 38px !important;
     }
+
     .select2-selection__choice {
         padding: 2px 5px !important;
         margin: 2px !important;
@@ -583,4 +630,3 @@
         border-radius: 3px !important;
     }
 </style>
-

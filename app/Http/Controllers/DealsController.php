@@ -42,6 +42,11 @@ class DealsController extends Controller
             $query->where('office_partner_id', $user->id);
         } elseif ($user->status === 'coordinator') {
             $query->where('coordinator_id', $user->id);
+        } elseif (in_array($user->status, ['architect', 'designer', 'visualizer'])) {
+            $query->whereHas('users', function ($q) use ($user) {
+                $q->where('user_id', $user->id)
+                  ->where('role', $user->status); // Фильтруем по роли пользователя
+            });
         } else {
             $query->whereHas('users', function ($q) use ($user) {
                 $q->where('user_id', $user->id);
@@ -269,6 +274,23 @@ class DealsController extends Controller
             // Привязываем текущего пользователя как координатора
             $deal->users()->attach([auth()->id() => ['role' => 'coordinator']]);
 
+            // Формируем массив связей для таблицы deal_user
+            $dealUsers = [auth()->id() => ['role' => 'coordinator']];
+            if ($request->filled('architect_id') && User::where('id', $request->input('architect_id'))->exists()) {
+                $dealUsers[$request->input('architect_id')] = ['role' => 'architect'];
+                $deal->architect_id = $request->input('architect_id');
+            }
+            if ($request->filled('designer_id') && User::where('id', $request->input('designer_id'))->exists()) {
+                $dealUsers[$request->input('designer_id')] = ['role' => 'designer'];
+                $deal->designer_id = $request->input('designer_id');
+            }
+            if ($request->filled('visualizer_id') && User::where('id', $request->input('visualizer_id'))->exists()) {
+                $dealUsers[$request->input('visualizer_id')] = ['role' => 'visualizer'];
+                $deal->visualizer_id = $request->input('visualizer_id');
+            }
+            $deal->save();
+            $deal->users()->attach($dealUsers);
+
             // Создаем групповой чат для сделки
             $this->createGroupChatForDeal($deal, [auth()->id()]);
 
@@ -485,17 +507,28 @@ class DealsController extends Controller
                 }
             }
 
+            // Обновляем связи в deal_user:
+            $dealUsers = [Auth::id() => ['role' => 'coordinator']];
+            if ($request->filled('architect_id') && User::where('id', $request->input('architect_id'))->exists()) {
+                $dealUsers[$request->input('architect_id')] = ['role' => 'architect'];
+                $deal->architect_id = $request->input('architect_id');
+            }
+            if ($request->filled('designer_id') && User::where('id', $request->input('designer_id'))->exists()) {
+                $dealUsers[$request->input('designer_id')] = ['role' => 'designer'];
+                $deal->designer_id = $request->input('designer_id');
+            }
+            if ($request->filled('visualizer_id') && User::where('id', $request->input('visualizer_id'))->exists()) {
+                $dealUsers[$request->input('visualizer_id')] = ['role' => 'visualizer'];
+                $deal->visualizer_id = $request->input('visualizer_id');
+            }
             if ($request->has('responsibles') && in_array($user->status, ['coordinator', 'admin'])) {
-                $responsibles = collect($request->input('responsibles'))->map(function($id) {
-                    return ['role' => 'responsible'];
-                })->toArray();
-
+                $responsibles = collect($request->input('responsibles'))
+                    ->map(function($id) { return ['role' => 'responsible']; })->toArray();
                 $validResponsibles = User::whereIn('id', array_keys($responsibles))->pluck('id')->toArray();
                 $responsibles = array_intersect_key($responsibles, array_flip($validResponsibles));
-                $responsibles[Auth::id()] = ['role' => 'coordinator'];
-
-                $deal->users()->sync($responsibles);
+                $dealUsers = array_merge($dealUsers, $responsibles);
             }
+            $deal->users()->sync($dealUsers);
 
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'deal' => $deal]);

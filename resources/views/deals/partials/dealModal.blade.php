@@ -68,7 +68,7 @@
                     $userRole = Auth::user()->status;
                 @endphp
                 <!-- Модуль: Заказ -->
-                <fieldset class="module__deal" id="module-zakaz">
+                <fieldset class="module__deal" id="module-zakaz"style="display: flex;"> 
                     <legend>Заказ</legend>
                     @foreach($dealFields['zakaz'] as $field)
                         <div class="form-group-deal">
@@ -263,62 +263,20 @@
     </div>
 </div>
 
-<!-- Скрипты для работы модального окна (можно вынести в отдельный JS-файл) -->
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Пример функции копирования регистрационной ссылки
-    window.copyRegistrationLink = function(regUrl) {
-        if (regUrl && regUrl !== '#') {
-            navigator.clipboard.writeText(regUrl).then(function() {
-                alert('Регистрационная ссылка скопирована: ' + regUrl);
-            }).catch(function(err) {
-                console.error('Ошибка копирования ссылки: ', err);
-            });
-        } else {
-            alert('Регистрационная ссылка отсутствует.');
-        }
-    };
-
-    // Пример переключения модулей
-    var modules = document.querySelectorAll("#editModal fieldset.module__deal");
-    var buttons = document.querySelectorAll("#editModal .button__points button");
-
-    modules.forEach(function(module) {
-        module.style.display = "none";
-        module.style.opacity = "0";
-        module.style.transition = "opacity 0.3s ease-in-out";
-    });
-    // По умолчанию показываем модуль "Заказ"
-    var defaultModule = document.querySelector("#module-zakaz");
-    if(defaultModule){
-        defaultModule.style.display = "flex";
-        setTimeout(function(){ defaultModule.style.opacity = "1"; }, 10);
-    }
-
-    buttons.forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            var targetText = btn.getAttribute('data-target').trim();
-            buttons.forEach(function(b){ b.classList.remove("buttonSealaActive"); });
-            btn.classList.add("buttonSealaActive");
-
-            modules.forEach(function(module) {
-                module.style.opacity = "0";
-                setTimeout(function(){ module.style.display = "none"; }, 300);
-            });
-            setTimeout(function(){
-                modules.forEach(function(module){
-                    if(module.querySelector("legend") && module.querySelector("legend").innerText.trim() === targetText){
-                        module.style.display = "flex";
-                        setTimeout(function(){ module.style.opacity = "1"; }, 10);
-                    }
+    document.addEventListener('DOMContentLoaded', function() {
+        // Функция копирования регистрационной ссылки
+        window.copyRegistrationLink = function(regUrl) {
+            if (regUrl && regUrl !== '#') {
+                navigator.clipboard.writeText(regUrl).then(function() {
+                    alert('Регистрационная ссылка скопирована: ' + regUrl);
+                }).catch(function(err) {
+                    console.error('Ошибка копирования ссылки: ', err);
                 });
-            }, 300);
-        });
+            } else {
+                alert('Регистрационная ссылка отсутствует.');
+            }
+        };
+    
     });
-
-    // Закрытие модального окна
-    document.getElementById('closeModalBtn').addEventListener('click', function(){
-        document.getElementById('editModal').style.display = "none";
-    });
-});
-</script>
+    </script>

@@ -115,30 +115,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     fileInputs[index].click(); // Активируем скрытый input
                 });
                 
-                // Показываем имена выбранных файлов
+                // При выборе файлов не выводим их имена и сразу отправляем сообщение
                 fileInputs[index].addEventListener('change', (e) => {
                     const files = e.target.files;
                     if (files.length > 0) {
-                        let fileNames = Array.from(files).map(file => file.name).join(', ');
-                        console.log('Выбранные файлы:', fileNames);
-                        
-                        // Опционально: показываем превью файлов
-                        const chatInput = button.closest('.chat-input');
-                        let filePreview = chatInput.querySelector('.file-preview');
-                        
-                        if (!filePreview) {
-                            filePreview = document.createElement('div');
-                            filePreview.classList.add('file-preview');
-                            chatInput.insertBefore(filePreview, chatMessageInput);
-                        }
-                        
-                        filePreview.innerHTML = '';
-                        Array.from(files).forEach(file => {
-                            const fileItem = document.createElement('div');
-                            fileItem.classList.add('file-item');
-                            fileItem.textContent = file.name;
-                            filePreview.appendChild(fileItem);
-                        });
+                        console.log('Выбраны файлы, отправляем сообщение');
+                        sendMessage();
                     }
                 });
             }

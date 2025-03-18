@@ -172,7 +172,7 @@ class DealModalController extends Controller
                 ],
                 [
                     'name' => 'office_partner_id',
-                    'label' => 'Офис/Партнер',
+                    'label' => 'Партнер',
                     'type' => 'select',
                     'role' => ['coordinator', 'admin'],
                     'options' => User::where('status', 'partner')->pluck('name', 'id')->toArray(),

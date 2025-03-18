@@ -16,7 +16,7 @@
         'resources/css/style.css',
         'resources/css/element.css',
         'resources/css/mobile.css',
-        'resources/js/firebase.js',
+    
         'resources/js/bootstrap.js',
         'resources/js/modal.js',
         'resources/js/notification.js',
@@ -26,7 +26,7 @@
         'resources/js/message-actions.js',
         'resources/js/emoji-picker.js',
         'resources/js/chat.js',
-        'resources/js/echo.js',
+      
     ])
 
     <script src="{{ asset('/js/wow.js') }}"></script>

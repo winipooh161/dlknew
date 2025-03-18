@@ -12,7 +12,7 @@
         height: 185px;
     }
     div#all-deals-container .faq_block__deal.faq_block-blur.brifs__button__create-faq_block__deal {
-        min-height: 305px;
+        min-height: 326px;
     }
     .faq_block__deal {
         display: none;
@@ -185,6 +185,10 @@
         border-radius: 0;
         padding: var(--p10);
         position: relative;
+        width: 100%;
+        position: fixed;
+        left: 0;
+        z-index: 999;
         margin: 0 !important;
         }
     .chat-box {
@@ -402,7 +406,7 @@
         overflow-y: auto;
         margin-bottom: 10px;
         border: 1px solid #eee;
-        padding: 60px 10px 10px 10px;
+        padding: 60px 10px 50px 10px;
     }
     .mb.mobile__ponel ul li button {
       
@@ -1179,6 +1183,12 @@ align-items: flex-start;
     }
     .chat-input {
         padding: 0;
+        position: fixed !important;
+        width: 100%;
+        left: 0;
+        z-index: 999;
+        bottom: 70px;
+        /* padding-bottom: 100px; */
     }
     .user-list ul {
     

@@ -4,6 +4,14 @@
     "src": "public/css/animate.css",
     "isEntry": true
   },
+  "public/img/auth/authFon.png": {
+    "file": "assets/authFon-Dr30-3FL.png",
+    "src": "public/img/auth/authFon.png"
+  },
+  "public/img/brifs/formFONbrif.png": {
+    "file": "assets/formFONbrif-Dxtcab3H.png",
+    "src": "public/img/brifs/formFONbrif.png"
+  },
   "public/js/jquery-3.6.0.min.js": {
     "file": "assets/jquery-3.6.0.min-5GtrIU7X.js",
     "name": "jquery-3.6.0.min",
@@ -22,7 +30,7 @@
     "isEntry": true
   },
   "resources/css/element.css": {
-    "file": "assets/element-CpZUDVHt.css",
+    "file": "assets/element-DjFQa8nm.css",
     "src": "resources/css/element.css",
     "isEntry": true
   },
@@ -32,12 +40,12 @@
     "isEntry": true
   },
   "resources/css/mobile.css": {
-    "file": "assets/mobile-CAtIwoQX.css",
+    "file": "assets/mobile-DOwLBs32.css",
     "src": "resources/css/mobile.css",
     "isEntry": true
   },
   "resources/css/style.css": {
-    "file": "assets/style-CcFtWF79.css",
+    "file": "assets/style-BUNvQf79.css",
     "src": "resources/css/style.css",
     "isEntry": true
   },
@@ -101,6 +109,10 @@
     "file": "assets/andantinoscript-DdKsraX8.ttf",
     "src": "resources/fonts/andantinoscript.ttf"
   },
+  "resources/icon/cursor.png": {
+    "file": "assets/cursor-Ds2YVdKN.png",
+    "src": "resources/icon/cursor.png"
+  },
   "resources/js/bootstrap.js": {
     "file": "assets/bootstrap-OSiMVbGE.js",
     "name": "bootstrap",
@@ -122,7 +134,7 @@
     ]
   },
   "resources/js/chat.js": {
-    "file": "assets/chat-C_QkEJV5.js",
+    "file": "assets/chat-DpHDejYL.js",
     "name": "chat",
     "src": "resources/js/chat.js",
     "isEntry": true,

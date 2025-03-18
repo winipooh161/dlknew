@@ -8,7 +8,7 @@
                 <img src="/storage/icon/brif.svg" alt="">
             </button>
         </li>
-        @if (Auth::user()->status == 'coordinator' || Auth::user()->status == 'admin'|| Auth::user()->status == 'partner')
+        @if (Auth::user()->status == 'coordinator' || Auth::user()->status == 'admin'|| Auth::user()->status == 'partner' || Auth::user()->status == 'support')
         <li>
             <button onclick="location.href='{{ route('deal.cardinator') }}'" >
                 <img src="/storage/icon/deal.svg" alt=""> 

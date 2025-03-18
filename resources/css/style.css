@@ -850,7 +850,7 @@ li.logo_flex.flex {
     display: flex;
     inset: 0px;
     position: fixed;
-    background-image: url("http://127.0.0.1:5173/@fs/C:/OSPanel/domains/lk/public/img/auth/authFon.png");
+    background-image: url("/public/img/auth/authFon.png");
     background-position: center center;
     background-size: 100%;
     background-repeat: no-repeat;
@@ -3082,7 +3082,7 @@ a, button {
 
 .custom-checkbox:checked + label::before {
     border-color: rgb(1, 172, 255);
-    background-image: url("http://127.0.0.1:5173/@fs/C:/OSPanel/domains/lk/resources/icon/cursor.png");
+    background-image: url("/resources/icon/cursor.png");
     background-repeat: no-repeat;
     background-position: center center;
     border-radius: 7px;
@@ -3716,7 +3716,7 @@ ul.auth__form__link a {
 }
 
 .auth__fon {
-    background-image: url("http://127.0.0.1:5173/@fs/C:/OSPanel/domains/lk/resources/icon/cursor.png");
+    background-image: url("/resources/icon/cursor.png");
     background-position: left center;
     height: 100%;
     background-size: contain;
@@ -3963,7 +3963,7 @@ table.dataTable tbody th, table.dataTable tbody td {
 }
 
 .div__create_form {
-    background-image: url("http://127.0.0.1:5173/@fs/C:/OSPanel/domains/lk/public/img/brifs/formFONbrif.png");
+    background-image: url("/public/img/brifs/formFONbrif.png");
     background-position: 100% center;
     border-radius: var(--radius);
     background-size: cover;
@@ -4817,6 +4817,7 @@ li.other-message strong {
     transition: background-color 0.3s, transform 0.2s, -webkit-transform 0.2s;
     margin-bottom: 10px;
     background: none !important;
+    z-index: 9999999999999;
 }
 
 #toggle-pinned:hover {
@@ -4861,7 +4862,7 @@ li.other-message strong {
 
 
 div#all-deals-container .faq_block__deal.faq_block-blur.brifs__button__create-faq_block__deal {
-    min-height: 266px;
+    min-height: 328px;
 }
 .feed-date {
     color: rgb(136, 136, 136);
@@ -5096,6 +5097,8 @@ td.link__deistv a {
     background: none !important;
 }.support__content .chat-box {
     min-height: 500px !important;
+    filter: blur(3px);
+
 }.chat-container.user__deals_chats .chat-box {
     min-height: 564px;
 }.deal__status h3 {
@@ -5203,6 +5206,8 @@ li.message {
 .message-actions {
     width: 100%;
     /* height: 100px; */
+    top: 15px;
+    position: relative;
     display: flex;
     flex-direction: row-reverse;
     align-items: flex-end;
@@ -5217,8 +5222,8 @@ li.message {
 }
 
 .message-actions button img {
-    width: 25px;
-    height: 25px;
+    width: 19px;
+    height: 18px;
 }
 .burger-users {
 
@@ -5336,14 +5341,30 @@ gap: 5px;
 }
 .close-modal {
     position: absolute;
-    top: -30px;
+    top: -41px;
     right: 0;
-    background: none;
     border: none;
-    color: white;
+    /* color: white; */
     font-size: 30px;
     cursor: pointer;
 }
 .burger-users {
         direction: none;
+    }span.sender-name {
+        font-weight: 500;
+    }.deals-list.deals-list-user {}
+
+    .deals-list-user .chat-header {
+        position: relative;
+    }
+    
+    .deals-list-user .chat-input {
+        position: relative !important;
+        padding: 0;
+    }
+    .variate__view button:hover img {
+        filter: grayscale(1) brightness(5); 
+    }
+    .message-actions button:hover {
+        background: none !important;
     }

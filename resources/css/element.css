@@ -1197,8 +1197,10 @@ button.remove-button {
 }
 .chat-input textarea {
     -webkit-box-flex: 1;
-        -ms-flex: 1;
-            flex: 1;
+    -ms-flex: 1;
+    flex: 1;
+    min-height: 39px !important;
+    height: 52px;
     resize: none;
     border: 1px solid var(--bluetext) !important;
 }
