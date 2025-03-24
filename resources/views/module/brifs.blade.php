@@ -255,7 +255,14 @@
                             <h4>{{ $brif->title }} #{{ $brif->id }}</h4>
                             <div class="button__brifs flex">
                                 <button class="button__variate2"><img src="/storage/icon/create__info.svg" alt=""> <span>Посмотреть</span></button>
-                               
+                                <button class="button__variate2" onclick="event.stopPropagation(); window.location.href='{{ route(
+                                    $brif instanceof \App\Models\Common
+                                        ? 'common.download.pdf'
+                                        : 'commercial.download.pdf',
+                                    $brif->id
+                                ) }}'">
+                                    <img src="/storage/icon/download.svg" alt=""> <span>Скачать PDF</span>
+                                </button>
                             </div>
                             <p class="flex wd100 between">
                                 <span>{{ $brif->created_at->format('H:i') }}</span>

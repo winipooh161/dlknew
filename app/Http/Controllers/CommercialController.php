@@ -258,9 +258,9 @@ public function saveAnswers(Request $request, $id, $page)
                 }
             }
 
-            // Переходим на список брифов (поскольку бриф завершён)
+            // Изменено: редирект на страницу сделки
             return redirect()
-                ->route('brifs.index')
+                ->route('deal.user')
                 ->with('success', 'Бриф успешно заполнен!');
             // <-- Обратите внимание: здесь return, значит дальше код не пойдёт.
 
@@ -285,7 +285,6 @@ public function saveAnswers(Request $request, $id, $page)
             return redirect()
                 ->route('brifs.index')
                 ->with('success', 'Бриф (шаг 14) успешно завершен!');
-        
         // -----------------
         // По умолчанию (прочие страницы) — сохраняем "preferences"
         default:
@@ -295,9 +294,6 @@ public function saveAnswers(Request $request, $id, $page)
             ]);
             // Достаём из БД текущие preferences
             $preferences = json_decode($commercial->preferences, true) ?? [];
-
-            // Каждая зона: 'zone_{index}' => question_{page} => answer
-            // (пример, как делалось ранее)
             foreach ($data['preferences'] ?? [] as $zoneIndex => $answers) {
                 $preferences[$zoneIndex]['question_' . $page] = $answers['answer'] ?? null;
             }
@@ -306,16 +302,12 @@ public function saveAnswers(Request $request, $id, $page)
             break;
     }
 
-    // 3. Если НЕ было return в switch (значит, это не финальный шаг)
     // Сохраняем бриф
     $commercial->save();
-
-    // 4. Переходим к следующей странице
+    // Переходим к следующей странице
     return redirect()->route('commercial.questions', [
         'id'   => $commercial->id,
         'page' => $page + 1
     ]);
 }
-
-    
 }

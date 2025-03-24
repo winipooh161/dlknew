@@ -1,4 +1,9 @@
-<h1>Детали брифа</h1>
+<h1>Детали брифа
+    <a href="{{ route('commercial.download.pdf', $brif->id) }}" class="btn btn-primary" style="float: right; margin-left: 20px;">
+        <img src="/storage/icon/download.svg" alt="Скачать PDF" style="width: 20px; margin-right: 5px; vertical-align: middle;">
+        Скачать PDF
+    </a>
+</h1>
 <table class="table table-bordered">
     <thead>
         <tr>

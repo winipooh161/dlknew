@@ -14,40 +14,57 @@
             @if ($page > 1)
                 <button type="button" class="btn btn-secondary" onclick="goToPrev()">Обратно</button>
             @endif
-            <button type="button" class="btn btn-primary" onclick="goToNext()">Далее</button>
+            <button type="button" class="btn btn-primary" onclick="validateAndSubmit()">Далее</button>
+            @if ($page > 0 && $page < $totalPages)
+                <button type="button" class="btn btn-warning" onclick="skipPage()">Пропустить</button>
+            @endif
         </div>
-        
     </div>
 @endif
 
-<form id="briefForm" action="{{ route('common.saveAnswers', ['id' => $brif->id, 'page' => $page]) }}" method="POST" enctype="multipart/form-data" class="back__fon__common">
+<form id="briefForm" action="{{ route('common.saveAnswers', ['id' => $brif->id, 'page' => $page]) }}" method="POST"
+    enctype="multipart/form-data" class="back__fon__common">
     @csrf
     <!-- Скрытое поле для определения направления перехода -->
     <input type="hidden" name="action" id="actionInput" value="next">
+    <!-- Скрытое поле для определения, была ли страница пропущена -->
+    <input type="hidden" name="skip_page" id="skipPageInput" value="0">
 
-    @php
-    $checkpointQuestions = collect($questions)->where('format', 'checkpoint');
-@endphp
+    <!-- Добавляем стили для ошибок валидации -->
+    <style>
+        .field-error {
+            border: 2px solid #ff0000 !important;
+            background-color: #fff0f0 !important;
+        }
+        
+        .error-message {
+            color: #ff0000;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+        
+        .error-placeholder::placeholder {
+            color: #ff0000 !important;
+            opacity: 1;
+        }
+    </style>
 
-@if($checkpointQuestions->isNotEmpty())
-    <div class="form__body flex between wrap pointblock">
-        @foreach ($checkpointQuestions as $question)
-            <div class="checkpoint flex wrap">
-                <div class="radio">
-                    <input type="checkbox"
-                           id="answer_{{ $loop->index }}"
-                           class="custom-checkbox"
-                           name="answers[{{ $question['key'] }}]"
-                           value="{{ $question['title'] }}"
-                           @if(isset($brif->{$question['key']}) && $brif->{$question['key']} === $question['title'])
-                               checked
-                           @endif>
-                    <label for="answer_{{ $loop->index }}">{{ $question['title'] }}</label>
+    @if($page == 0)
+        <div class="form__body flex between wrap pointblock">
+            {{-- Используем $questions для вывода чекбоксов комнат --}}
+            @foreach($questions as $room)
+                <div class="checkpoint flex wrap">
+                    <div class="radio">
+                        <input type="checkbox" id="room_{{ $room['key'] }}" class="custom-checkbox"
+                               name="answers[{{ $room['key'] }}]" value="{{ $room['title'] }}"
+                               @if(isset($brif->{$room['key']})) checked @endif>
+                        <label for="room_{{ $room['key'] }}">{{ $room['title'] }}</label>
+                    </div>
                 </div>
-            </div>
-        @endforeach
-    </div>
-@endif
+            @endforeach
+        </div>
+    @endif
 
     {{-- Блок с вопросами форматов "default" и "faq" --}}
     <div class="form__body flex between wrap">
@@ -59,18 +76,15 @@
                         <p>{{ $question['subtitle'] }}</p>
                     @endif
                     @if ($question['type'] === 'textarea')
-                        <textarea name="answers[{{ $question['key'] }}]"
-                                  placeholder="{{ $question['placeholder'] }}"
-                                  class="form-control"
-                                  maxlength="500">{{ $brif->{$question['key']} ?? '' }}</textarea>
+                        <textarea name="answers[{{ $question['key'] }}]" placeholder="{{ $question['placeholder'] }}" 
+                            class="form-control required-field" data-original-placeholder="{{ $question['placeholder'] }}"
+                            maxlength="500">{{ $brif->{$question['key']} ?? '' }}</textarea>
                     @else
-                        <input type="text"
-                               name="answers[{{ $question['key'] }}]"
-                               class="form-control"
-                               value="{{ $brif->{$question['key']} ?? '' }}"
-                               placeholder="{{ $question['placeholder'] }}"
-                               maxlength="500">
+                        <input type="text" name="answers[{{ $question['key'] }}]" class="form-control required-field"
+                            value="{{ $brif->{$question['key']} ?? '' }}" placeholder="{{ $question['placeholder'] }}"
+                            data-original-placeholder="{{ $question['placeholder'] }}" maxlength="500">
                     @endif
+                    <span class="error-message">Это поле обязательно для заполнения</span>
                 </div>
             @endif
 
@@ -82,136 +96,148 @@
                             <div class="faq_question" onclick="toggleFaq(this)">
                                 <h2>{{ $question['title'] }}</h2>
                                 <svg class="arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                                     width="24" height="24">
+                                    width="24" height="24">
                                     <path d="M7 10l5 5 5-5z"></path>
                                 </svg>
                             </div>
                             <div class="faq_answer">
                                 @if ($question['type'] === 'textarea')
-                                    <textarea name="answers[{{ $question['key'] }}]"
-                                              placeholder="{{ $question['placeholder'] }}"
-                                              class="form-control"
-                                              maxlength="500">{{ $brif->{$question['key']} ?? '' }}</textarea>
+                                    <textarea name="answers[{{ $question['key'] }}]" placeholder="{{ $question['placeholder'] }}" 
+                                        class="form-control required-field" data-original-placeholder="{{ $question['placeholder'] }}"
+                                        maxlength="500">{{ $brif->{$question['key']} ?? '' }}</textarea>
                                 @else
-                                    <input type="text"
-                                           name="answers[{{ $question['key'] }}]"
-                                           class="form-control"
-                                           value="{{ $brif->{$question['key']} ?? '' }}"
-                                           placeholder="{{ $question['placeholder'] }}"
-                                           maxlength="500">
+                                    <input type="text" name="answers[{{ $question['key'] }}]" class="form-control required-field"
+                                        value="{{ $brif->{$question['key']} ?? '' }}" placeholder="{{ $question['placeholder'] }}"
+                                        data-original-placeholder="{{ $question['placeholder'] }}" maxlength="500">
                                 @endif
+                                <span class="error-message">Это поле обязательно для заполнения</span>
                             </div>
                         </div>
+                    </div>
+                </div>
+            @endif
+
+            {{-- Если формат checkpoint — чекбоксы --}}
+            @if ($question['format'] === 'checkpoint')
+                <div class="checkpoint flex wrap">
+                    <div class="radio">
+                        <input type="checkbox" id="{{ $question['key'] }}" class="custom-checkbox"
+                               name="answers[{{ $question['key'] }}]" value="1"
+                               @if(isset($brif->{$question['key']}) && $brif->{$question['key']} == 1) checked @endif>
+                        <label for="{{ $question['key'] }}">{{ $question['title'] }}</label>
                     </div>
                 </div>
             @endif
         @endforeach
 
         {{-- Если это страница 15 — загрузка файлов --}}
-       {{-- Если это страница 15 — загрузка файлов --}}
-@if ($page == 15)
-<div class="upload__files">
-    <h6>Загрузите документы (не более 25 МБ суммарно):</h6>
-    <div id="drop-zone">
-        <p id="drop-zone-text">Перетащите файлы сюда или нажмите, чтобы выбрать</p>
-        <input id="fileInput" type="file" name="documents[]" multiple
-            accept=".pdf,.xlsx,.xls,.doc,.docx,.jpg,.jpeg,.png,.heic,.heif">
-    </div>
-    <p class="error-message" style="color: red;"></p>
-    <small>Допустимые форматы: .pdf, .xlsx, .xls, .doc, .docx, .jpg, .jpeg, .png, .heic, .heif</small><br>
-    <small>Максимальный суммарный размер: 25 МБ</small>
-</div>
+        @if ($page == 15)
+            <div class="upload__files">
+                <h6>Загрузите документы (не более 25 МБ суммарно):</h6>
+                <div id="drop-zone">
+                    <p id="drop-zone-text">Перетащите файлы сюда или нажмите, чтобы выбрать</p>
+                    <input id="fileInput" type="file" name="documents[]" multiple
+                        accept=".pdf,.xlsx,.xls,.doc,.docx,.jpg,.jpeg,.png,.heic,.heif">
+                </div>
+                <p class="error-message" style="color: red;"></p>
+                <small>Допустимые форматы: .pdf, .xlsx, .xls, .doc, .docx, .jpg, .jpeg, .png, .heic, .heif</small><br>
+                <small>Максимальный суммарный размер: 25 МБ</small>
+            </div>
 
-<style>
-    .upload__files {
-        margin: 20px 0;
-        font-family: Arial, sans-serif;
-    }
-    /* Стилизация области перетаскивания */
-    #drop-zone {
-        border: 2px dashed #ccc;
-        border-radius: 6px;
-        padding: 30px;
-        text-align: center;
-        cursor: pointer;
-        position: relative;
-        transition: background-color 0.3s ease;
-    }
-    #drop-zone.dragover {
-        background-color: #f0f8ff;
-        border-color: #007bff;
-    }
-    #drop-zone p {
-        margin: 0;
-        font-size: 16px;
-        color: #666;
-    }
-    /* Скрываем нативное поле выбора файлов, но оставляем его доступным */
-    #fileInput {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        opacity: 0;
-        cursor: pointer;
-    }
-</style>
+            <style>
+                .upload__files {
+                    margin: 20px 0;
+                    font-family: Arial, sans-serif;
+                }
 
-<script>
-    const dropZone = document.getElementById('drop-zone');
-    const fileInput = document.getElementById('fileInput');
-    const dropZoneText = document.getElementById('drop-zone-text');
+                /* Стилизация области перетаскивания */
+                #drop-zone {
+                    border: 2px dashed #ccc;
+                    border-radius: 6px;
+                    padding: 30px;
+                    text-align: center;
+                    cursor: pointer;
+                    position: relative;
+                    transition: background-color 0.3s ease;
+                }
 
-    // Функция обновления текста в drop zone
-    function updateDropZoneText() {
-        const files = fileInput.files;
-        if (files && files.length > 0) {
-            const names = [];
-            for (let i = 0; i < files.length; i++) {
-                names.push(files[i].name);
-            }
-            dropZoneText.textContent = names.join(', ');
-        } else {
-            dropZoneText.textContent = "Перетащите файлы сюда или нажмите, чтобы выбрать";
-        }
-    }
+                #drop-zone.dragover {
+                    background-color: #f0f8ff;
+                    border-color: #007bff;
+                }
 
-    // Предотвращаем поведение по умолчанию для событий drag-and-drop
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-        dropZone.addEventListener(eventName, function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }, false);
-    });
+                #drop-zone p {
+                    margin: 0;
+                    font-size: 16px;
+                    color: #666;
+                }
 
-    // Добавляем класс при перетаскивании
-    ['dragenter', 'dragover'].forEach(eventName => {
-        dropZone.addEventListener(eventName, () => {
-            dropZone.classList.add('dragover');
-        }, false);
-    });
+                /* Скрываем нативное поле выбора файлов, но оставляем его доступным */
+                #fileInput {
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    opacity: 0;
+                    cursor: pointer;
+                }
+            </style>
 
-    // Удаляем класс, когда файлы покидают область или сброшены
-    ['dragleave', 'drop'].forEach(eventName => {
-        dropZone.addEventListener(eventName, () => {
-            dropZone.classList.remove('dragover');
-        }, false);
-    });
+            <script>
+                const dropZone = document.getElementById('drop-zone');
+                const fileInput = document.getElementById('fileInput');
+                const dropZoneText = document.getElementById('drop-zone-text');
 
-    // Обработка события сброса (drop)
-    dropZone.addEventListener('drop', function(e) {
-        let files = e.dataTransfer.files;
-        fileInput.files = files;
-        updateDropZoneText();
-    });
+                // Функция обновления текста в drop zone
+                function updateDropZoneText() {
+                    const files = fileInput.files;
+                    if (files && files.length > 0) {
+                        const names = [];
+                        for (let i = 0; i < files.length; i++) {
+                            names.push(files[i].name);
+                        }
+                        dropZoneText.textContent = names.join(', ');
+                    } else {
+                        dropZoneText.textContent = "Перетащите файлы сюда или нажмите, чтобы выбрать";
+                    }
+                }
 
-    // При изменении поля выбора файлов обновляем текст
-    fileInput.addEventListener('change', function() {
-        updateDropZoneText();
-    });
-</script>
-@endif
+                // Предотвращаем поведение по умолчанию для событий drag-and-drop
+                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                    dropZone.addEventListener(eventName, function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }, false);
+                });
+
+                // Добавляем класс при перетаскивании
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    dropZone.addEventListener(eventName, () => {
+                        dropZone.classList.add('dragover');
+                    }, false);
+                });
+
+                // Удаляем класс, когда файлы покидают область или сброшены
+                ['dragleave', 'drop'].forEach(eventName => {
+                    dropZone.addEventListener(eventName, () => {
+                        dropZone.classList.remove('dragover');
+                    }, false);
+                });
+
+                // Обработка события сброса (drop)
+                dropZone.addEventListener('drop', function(e) {
+                    let files = e.dataTransfer.files;
+                    fileInput.files = files;
+                    updateDropZoneText();
+                });
+
+                // При изменении поля выбора файлов обновляем текст
+                fileInput.addEventListener('change', function() {
+                    updateDropZoneText();
+                });
+            </script>
+        @endif
 
     </div>
 
@@ -260,42 +286,73 @@
     @endif
 </form>
 
-<!-- Функции для навигации между шагами -->
+<!-- JavaScript для проверки заполнения обязательных полей и возможности пропуска страниц -->
 <script>
-   function goToPrev() {
-    document.getElementById('actionInput').value = 'prev';
-    document.getElementById('briefForm').submit();
-}
-function goToNext() {
-    document.getElementById('actionInput').value = 'next';
-    document.getElementById('briefForm').submit();
-}
-
-</script>
-
-<!-- Скрипт для проверки файлов на размер и формат -->
-<script>
-    document.getElementById('fileInput')?.addEventListener('change', function() {
-        const allowedFormats = ['pdf', 'xlsx', 'xls', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'heic', 'heif'];
-        const errorMessageElement = document.querySelector('.error-message');
-        const files = this.files;
-        let totalSize = 0;
-        errorMessageElement.textContent = '';
-        for (const file of files) {
-            const fileExt = file.name.split('.').pop().toLowerCase();
-            if (!allowedFormats.includes(fileExt)) {
-                errorMessageElement.textContent = `Недопустимый формат файла: ${file.name}.`;
-                this.value = '';
-                return;
+    // Функция для проверки заполнения всех обязательных полей
+    function validateForm() {
+        let isValid = true;
+        const requiredFields = document.querySelectorAll('.required-field');
+        
+        // Сбрасываем стили ошибок для всех полей
+        requiredFields.forEach(function(field) {
+            field.classList.remove('field-error', 'error-placeholder');
+            field.placeholder = field.getAttribute('data-original-placeholder');
+            
+            const errorMsg = field.nextElementSibling;
+            if (errorMsg && errorMsg.classList.contains('error-message')) {
+                errorMsg.style.display = 'none';
             }
-            totalSize += file.size;
-        }
-        if (totalSize > 25 * 1024 * 1024) {
-            errorMessageElement.textContent = 'Суммарный размер файлов не должен превышать 25 МБ.';
-            this.value = '';
-        }
-    });
+        });
+        
+        // Проверяем каждое обязательное поле
+        requiredFields.forEach(function(field) {
+            if (!field.value.trim()) {
+                isValid = false;
+                
+                // Добавляем стили ошибок
+                field.classList.add('field-error', 'error-placeholder');
+                field.placeholder = 'Заполните это поле!';
+                
+                // Показываем сообщение об ошибке
+                const errorMsg = field.nextElementSibling;
+                if (errorMsg && errorMsg.classList.contains('error-message')) {
+                    errorMsg.style.display = 'block';
+                }
+                
+                // Если поле в аккордеоне, открываем аккордеон
+                const faqItem = field.closest('.faq_item');
+                if (faqItem && !faqItem.classList.contains('active')) {
+                    toggleFaq(faqItem.querySelector('.faq_question'));
+                }
+            }
+        });
+        
+        return isValid;
+    }
     
+    // Функция для отправки формы после валидации
+    function validateAndSubmit() {
+        if (validateForm()) {
+            document.getElementById('actionInput').value = 'next';
+            document.getElementById('skipPageInput').value = '0';
+            document.getElementById('briefForm').submit();
+        }
+    }
+    
+    // Функция для пропуска текущей страницы
+    function skipPage() {
+        document.getElementById('actionInput').value = 'next';
+        document.getElementById('skipPageInput').value = '1';
+        document.getElementById('briefForm').submit();
+    }
+    
+    // Функция для перехода на предыдущую страницу
+    function goToPrev() {
+        document.getElementById('actionInput').value = 'prev';
+        document.getElementById('briefForm').submit();
+    }
+    
+    // Функция для переключения аккордеонов FAQ
     function toggleFaq(questionElement) {
         const faqItem = questionElement.parentElement;
         const faqAnswer = faqItem.querySelector('.faq_answer');
@@ -320,4 +377,47 @@ function goToNext() {
             faqAnswer.style.height = '0px';
         }
     }
+    
+    // Добавляем обработчики событий для полей, чтобы убирать ошибки при вводе
+    document.addEventListener('DOMContentLoaded', function() {
+        const requiredFields = document.querySelectorAll('.required-field');
+        
+        requiredFields.forEach(function(field) {
+            field.addEventListener('input', function() {
+                if (field.value.trim()) {
+                    field.classList.remove('field-error', 'error-placeholder');
+                    field.placeholder = field.getAttribute('data-original-placeholder');
+                    
+                    const errorMsg = field.nextElementSibling;
+                    if (errorMsg && errorMsg.classList.contains('error-message')) {
+                        errorMsg.style.display = 'none';
+                    }
+                }
+            });
+        });
+    });
+</script>
+
+<!-- Скрипт для проверки файлов на размер и формат -->
+<script>
+    document.getElementById('fileInput')?.addEventListener('change', function() {
+        const allowedFormats = ['pdf', 'xlsx', 'xls', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'heic', 'heif'];
+        const errorMessageElement = document.querySelector('.error-message');
+        const files = this.files;
+        let totalSize = 0;
+        errorMessageElement.textContent = '';
+        for (const file of files) {
+            const fileExt = file.name.split('.').pop().toLowerCase();
+            if (!allowedFormats.includes(fileExt)) {
+                errorMessageElement.textContent = `Недопустимый формат файла: ${file.name}.`;
+                this.value = '';
+                return;
+            }
+            totalSize += file.size;
+        }
+        if (totalSize > 25 * 1024 * 1024) {
+            errorMessageElement.textContent = 'Суммарный размер файлов не должен превышать 25 МБ.';
+            this.value = '';
+        }
+    });
 </script>

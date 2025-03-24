@@ -35,7 +35,7 @@ class Deal extends Model
         'comment',
         'project_number',
         'order_stage',
-        'price_service',
+        'price_service_option',
         'rooms_count_pricing',
         'execution_order_comment',
         'execution_order_file',

@@ -1,6 +1,9 @@
-
 <h1 class="flex">
     Детали  брифа 
+    <a href="{{ route('common.download.pdf', $brif->id) }}" class="btn btn-primary ml-auto" style="margin-left: auto;">
+        <img src="/storage/icon/download.svg" alt="Скачать PDF" style="width: 20px; margin-right: 5px; vertical-align: middle;">
+        Скачать PDF
+    </a>
 </h1>
 <table class="table table-bordered" style="">
     <thead>

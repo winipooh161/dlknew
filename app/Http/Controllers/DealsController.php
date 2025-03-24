@@ -196,38 +196,36 @@ class DealsController extends Controller
      */
     public function storeDeal(Request $request)
     {
-        $user = Auth::user();
+        $validated = $request->validate([
+            'name'                    => 'required|string|max:255',
+            'client_phone'            => 'required|string|max:50',
+            'package'                 => 'required|string|max:255',
+            'price_service_option'    => 'required|string|max:255',
+            'rooms_count_pricing'     => 'nullable|integer|min:1|max:2147483647',
+            'execution_order_comment' => 'nullable|string|max:1000',
+            'execution_order_file'    => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'office_partner_id'       => 'nullable|exists:users,id',
+            'coordinator_id'          => 'nullable|exists:users,id',
+            'total_sum'               => 'nullable|numeric',
+            'measuring_cost'          => 'nullable|numeric',
+            'client_info'             => 'nullable|string',
+            'payment_date'            => 'nullable|date',
+            'execution_comment'       => 'nullable|string',
+            'comment'                 => 'nullable|string',
+            'client_timezone'         => 'nullable|string',
+            'completion_responsible'  => 'nullable|string',
+            'start_date'              => 'nullable|date',
+            'project_duration'        => 'nullable|integer',
+            'project_end_date'        => 'nullable|date',
+        ]);
+
+        $user = Auth::user(); 
         if (!in_array($user->status, ['coordinator', 'admin', 'partner'])) {
             return redirect()->route('deal.cardinator')
                 ->with('error', 'Только координатор, администратор или партнер могут создавать сделку.');
-        }
-
+        } 
+ 
         try {
-            $validated = $request->validate([
-                'name'                    => 'required|string|max:255',
-                'client_phone'            => 'required|string|max:50',
-                'package'                 => 'required|string|max:255',
-                'project_number'          => 'nullable|string|max:21',
-                'price_service_option'    => 'required|string|max:255',
-                // Изменено: добавлено ограничение max для поля rooms_count_pricing
-                'rooms_count_pricing'     => 'nullable|integer|min:1|max:2147483647',
-                'execution_order_comment' => 'nullable|string|max:1000',
-                'execution_order_file'    => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
-                'office_partner_id'       => 'nullable|exists:users,id',
-                'coordinator_id'          => 'nullable|exists:users,id',
-                'total_sum'               => 'nullable|numeric',
-                'measuring_cost'          => 'nullable|numeric',
-                'client_info'             => 'nullable|string',
-                'payment_date'            => 'nullable|date',
-                'execution_comment'       => 'nullable|string',
-                'comment'                 => 'nullable|string',
-                'client_timezone'         => 'nullable|string',
-                'completion_responsible'  => 'nullable|string',
-                'start_date'              => 'nullable|date',
-                'project_duration'        => 'nullable|integer',
-                'project_end_date'        => 'nullable|date',
-            ]);
-
             $coordinatorId = $validated['coordinator_id'] ?? auth()->id();
 
             $deal = Deal::create([
@@ -236,8 +234,7 @@ class DealsController extends Controller
                 'status'                 => 'Ждем ТЗ', // устанавливаем значение по умолчанию
                 'package'                => $validated['package'],
                 'client_name'            => $validated['name'],
-                'project_number'         => $validated['project_number'] ?? null,
-                'price_service'          => $validated['price_service_option'],
+                'price_service_option'          => $validated['price_service_option'],
                 'rooms_count_pricing'    => $validated['rooms_count_pricing'] ?? null,
                 'execution_order_comment'=> $validated['execution_order_comment'] ?? null,
                 'office_partner_id'      => $validated['office_partner_id'] ?? null,

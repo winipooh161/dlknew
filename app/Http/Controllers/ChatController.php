@@ -513,23 +513,51 @@ class ChatController extends Controller
         $userId = Auth::id();
 
         try {
-            $personalUnreadCount = Message::where('receiver_id', $userId)
-                ->where('is_read', false)
-                ->count();
-
-            $groupUnreadCount = 0;
-            if (Schema::hasTable('chat_user')) {
-                $groupUnreadCount = DB::table('chat_user')
-                    ->join('messages', 'chat_user.chat_id', '=', 'messages.chat_id')
-                    ->where('chat_user.user_id', $userId)
-                    ->where('messages.sender_id', '!=', $userId)
-                    ->where('messages.is_read', false)
+            // Получаем личные чаты с непрочитанными сообщениями
+            $personalChats = Chat::where('type', 'personal')
+                ->where(function ($query) use ($userId) {
+                    $query->where('sender_id', $userId)
+                          ->orWhere('receiver_id', $userId);
+                })
+                ->get();
+            
+            $personalUnread = [];
+            foreach ($personalChats as $chat) {
+                $unreadCount = Message::where('chat_id', $chat->id)
+                    ->where('sender_id', '!=', $userId)
+                    ->where('is_read', false)
                     ->count();
+                
+                if ($unreadCount > 0) {
+                    $personalUnread[$chat->id] = $unreadCount;
+                }
+            }
+
+            // Получаем групповые чаты с непрочитанными сообщениями
+            $groupUnread = [];
+            if (Schema::hasTable('chat_user')) {
+                $groupChats = Chat::where('type', 'group')
+                    ->whereHas('users', function ($query) use ($userId) {
+                        $query->where('user_id', $userId);
+                    })
+                    ->get();
+                
+                foreach ($groupChats as $chat) {
+                    $unreadCount = Message::where('chat_id', $chat->id)
+                        ->where('sender_id', '!=', $userId)
+                        ->where('is_read', false)
+                        ->count();
+                    
+                    if ($unreadCount > 0) {
+                        $groupUnread[$chat->id] = $unreadCount;
+                    }
+                }
             }
 
             $unreadCounts = [
-                'personal' => $personalUnreadCount,
-                'group' => $groupUnreadCount,
+                'personal' => $personalUnread,
+                'group' => $groupUnread,
+                'total' => array_sum($personalUnread) + array_sum($groupUnread)
             ];
 
             return response()->json($unreadCounts);
@@ -709,7 +737,7 @@ class ChatController extends Controller
                 'sender_id' => $currentUserId,
                 'receiver_id' => $otherUserId,
             ]);
-            // При наличии таблицы chat_user, добавляем обе записи
+      
             $chat->participants()->attach([$currentUserId, $otherUserId]);
         }
         

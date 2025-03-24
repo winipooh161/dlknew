@@ -5,59 +5,59 @@
                         src="/storage/icon/logo.svg" alt=""></span></a>
         </li>
         <li>
-            <button id="toggle-panel" class="toggle-btn"> <img src="/storage/icon/burger.svg" alt=""> <span>Свернуть меню</span></button>
+            <button id="toggle-panel" class="toggle-btn"> <img src="/storage/icon/burger.svg" alt="">
+                <span>Свернуть меню</span></button>
         </li>
-       
-        
         <li>
             <button onclick="location.href='{{ url('/brifs') }}'" id="step-4">
                 <img src="/storage/icon/brif.svg" alt=""><span>Ваши брифы</span>
             </button>
         </li>
-        @if (Auth::user()->status == 'coordinator' || Auth::user()->status == 'admin'|| Auth::user()->status == 'partner' || Auth::user()->status == 'support')
-        <li>
-            <button onclick="location.href='{{ route('deal.cardinator') }}'" id="step-5">
-                <img src="/storage/icon/deal.svg" alt=""> <span>Ваши сделки</span>
-            </button>
-        </li>
-      
-        <li>
-            <button onclick="location.href='{{ url('/chats') }}'"  >
-                <img src="/storage/icon/chat.svg" alt=""> <span>Ваши чаты</span>
-            </button>
-        </li>
-     
-    @else
-        <li>
-            <button onclick="location.href='{{ route('deal.user') }}'">
-                <img src="/storage/icon/deal.svg" alt=""> <span>Сделка </span>
-            </button>
-        </li>
-       
-    @endif
+        @if (Auth::user()->status == 'coordinator' ||
+                Auth::user()->status == 'admin' ||
+                Auth::user()->status == 'partner' ||
+                Auth::user()->status == 'support' ||
+                Auth::user()->status == 'architect' ||
+                Auth::user()->status == 'designer' || Auth::user()->status == 'visualizer')
+            <li>
+                <button onclick="location.href='{{ route('deal.cardinator') }}'" id="step-5">
+                    <img src="/storage/icon/deal.svg" alt=""> <span>Ваши сделки</span>
+                </button>
+            </li>
+            <li>
+                <button onclick="location.href='{{ url('/chats') }}'">
+                    <img src="/storage/icon/chat.svg" alt=""> <span>Ваши чаты</span>
+                </button>
+            </li>
+        @else
+            <li>
+                <button onclick="location.href='{{ route('deal.user') }}'">
+                    <img src="/storage/icon/deal.svg" alt=""> <span>Сделка </span>
+                </button>
+            </li>
+        @endif
         @if (Auth::user()->status == 'partner' || Auth::user()->status == 'admin')
             <li>
                 <button onclick="location.href='{{ url('/estimate') }}'">
                     <img src="/storage/icon/estimates.svg" alt=""> <span>Ваши сметы</span>
                 </button>
             </li>
-            
         @endif
-  
+
         <li>
             <button onclick="location.href='{{ url('/profile') }}'" id="step-6">
                 <img src="/storage/icon/profile.svg" alt=""><span>Ваш профиль</span>
             </button>
         </li>
-        @if (Auth::user()->status == 'admin' )
+        @if (Auth::user()->status == 'admin')
+            <li>
+                <button onclick="location.href='{{ url('/admin') }}'">
+                    <img src="/storage/icon/admin.svg" alt=""> <span>Админка</span>
+                </button>
+            </li>
+        @endif
         <li>
-            <button onclick="location.href='{{ url('/admin') }}'">
-                <img src="/storage/icon/admin.svg" alt=""> <span>Админка</span>
-            </button>
-        </li>
-    @endif
-        <li>
-            <button onclick="location.href='{{ url('/support') }}'"  id="step-7">
+            <button onclick="location.href='{{ url('/support') }}'" id="step-7">
                 <img src="/storage/icon/support.svg" alt=""><span>Помощь</span>
             </button>
         </li>

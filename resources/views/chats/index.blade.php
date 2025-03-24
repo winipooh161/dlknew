@@ -89,7 +89,6 @@
             </div>
             <div class="chat-box">
                 <div class="chat-header">
-
                     Техническая поддержка
                     <!-- Кнопка фильтра закреплённых сообщений -->
                     <button id="toggle-pinned" class="toggle-pinned" style="margin-left:10px;">Показать только
@@ -222,43 +221,100 @@
         document.addEventListener('DOMContentLoaded', function () {
             import('{{ Vite::asset("resources/js/chat-utils.js") }}').then(module => {
                 window.fetchNewMessages = module.fetchNewMessages;
-                setInterval(window.fetchNewMessages, 1000);
-                window.fetchNewMessages();
+                
+                // Добавляем функцию для обновления непрочитанных сообщений
+                window.updateUnreadCounts = function() {
+                    fetch('/chats/unread-counts')
+                        .then(response => response.json())
+                        .then(data => {
+                            // Обновляем счетчики непрочитанных сообщений для всех чатов
+                            const chatItems = document.querySelectorAll('#chat-list li');
+                            chatItems.forEach(item => {
+                                const chatId = item.getAttribute('data-chat-id');
+                                const chatType = item.getAttribute('data-chat-type');
+                                
+                                // Проверяем есть ли данные для этого чата
+                                if (data[chatType] && data[chatType][chatId]) {
+                                    const unreadCount = data[chatType][chatId];
+                                    let countElement = item.querySelector('.unread-count');
+                                    
+                                    if (unreadCount > 0) {
+                                        // Если есть непрочитанные сообщения
+                                        if (!countElement) {
+                                            // Создаем элемент, если его нет
+                                            countElement = document.createElement('span');
+                                            countElement.className = 'unread-count';
+                                            const nameElement = item.querySelector('.user-list__info h5');
+                                            if (nameElement) {
+                                                nameElement.appendChild(countElement);
+                                            }
+                                        }
+                                        countElement.textContent = unreadCount;
+                                    } else if (countElement) {
+                                        // Если нет непрочитанных сообщений, удаляем счетчик
+                                        countElement.remove();
+                                    }
+                                }
+                            });
+                        })
+                       
+                };
+                
+                // Выполняем обе функции с интервалом в 1 секунду
+                const updateAll = function() {
+                    window.fetchNewMessages();
+                    window.updateUnreadCounts();
+                };
+                
+                // Запускаем сразу и устанавливаем интервал
+                updateAll();
+                setInterval(updateAll, 1000);
             }).catch(err => {
                 console.error('Ошибка при импорте chat-utils.js:', err);
             });
         });
     </script>
-      <!-- Стили для вложений и предпросмотра файлов -->
-      <style>
-      
-    </style>
-   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        if (window.innerWidth < 768) { // Код выполняется только если ширина экрана меньше 768px
-            const burger = document.querySelector('.burger-users');
-            const userList = document.querySelector('.user-list');
-            if (burger && userList) {
-                burger.addEventListener('click', () => {
-                    if(userList.style.transform === 'translateX(0%)') {
-                        userList.style.transform = 'translateX(-100%)';
-                    } else {
-                        userList.style.transform = 'translateX(0%)';
-                    }
-                });
-            }
-            // При выборе чата скрываем меню
-            const chatItems = document.querySelectorAll('.user-list li');
+
+    <!-- Добавляем новый скрипт для обработки клика по чату -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Находим все элементы чатов в списке
+            const chatItems = document.querySelectorAll('#chat-list li');
+            
+            // Добавляем обработчик события клика на каждый элемент
             chatItems.forEach(item => {
-                item.addEventListener('click', () => {
-                    if(userList) {
-                        userList.style.transform = 'translateX(-100%)';
-                    }
+                item.addEventListener('click', function() {
+                    const chatId = this.getAttribute('data-chat-id');
+                    const chatType = this.getAttribute('data-chat-type');
+                    
+                    if (!chatId || !chatType) return;
+                    
+                    // Отправляем запрос на маркировку сообщений как прочитанных
+                    fetch(`/chats/${chatType}/${chatId}/mark-read`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        }
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            // Если запрос успешный, удаляем счетчик непрочитанных сообщений
+                            const unreadCountElement = this.querySelector('.unread-count');
+                            if (unreadCountElement) {
+                                unreadCountElement.remove();
+                            }
+                        }
+                        return response.json();
+                    })
+                    .catch(error => {
+                        console.error('Ошибка при маркировке сообщений как прочитанных:', error);
+                    });
                 });
             });
-        }
-    });
+        });
     </script>
+
     <script>
     // Фильтрация чатов по введенному запросу
     document.addEventListener('DOMContentLoaded', () => {
@@ -277,6 +333,154 @@
     });
     </script>
     <style>
-       
-    </style>
+    /* Стили для бургер-меню */
+    .burger-users {
+        display: none; /* Скрыто по умолчанию */
+        cursor: pointer;
+        z-index: 1000;
+        position: relative;
+    }
+    
+    .burger-users span {
+        display: block;
+        width: 25px;
+        height: 3px;
+        background-color: #333;
+        margin: 5px 0;
+    }
+    
+    /* Показываем бургер только на мобильных */
+    @media (max-width: 768px) {
+        .burger-users {
+            display: block;
+        }
+        
+        .user-list {
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+            position: fixed;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 80%;
+            z-index: 999;
+            background-color: white;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.2);
+        }
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM загружен, инициализация бургер-меню');
+    
+    // Функция для настройки бургер-меню в зависимости от размера экрана
+    function setupBurgerMenu() {
+        const burger = document.querySelector('.burger-users');
+        const userList = document.querySelector('.user-list');
+        
+        // Очищаем предыдущие обработчики, если они были
+        if (burger) {
+            burger.replaceWith(burger.cloneNode(true));
+        }
+        
+        // Получаем обновленные элементы после клонирования
+        const updatedBurger = document.querySelector('.burger-users');
+        
+        if (updatedBurger && userList) {
+            // Работаем только на мобильных устройствах
+            if (window.innerWidth < 768) {
+                console.log('Настройка бургер-меню для мобильных устройств');
+                
+                // Устанавливаем начальное состояние
+                userList.style.transform = 'translateX(-100%)';
+                
+                // Добавляем обработчик клика
+                updatedBurger.addEventListener('click', () => {
+                    console.log('Клик по бургер-меню (мобильный)');
+                    
+                    if(userList.style.transform === 'translateX(0%)') {
+                        console.log('Скрываем меню');
+                        userList.style.transform = 'translateX(-100%)';
+                    } else {
+                        console.log('Показываем меню');
+                        userList.style.transform = 'translateX(0%)';
+                    }
+                });
+                
+                // При выборе чата скрываем меню только на мобильных устройствах
+                const chatItems = document.querySelectorAll('#chat-list li');
+                chatItems.forEach(item => {
+                    item.addEventListener('click', () => {
+                        // Проверяем ширину экрана перед скрытием списка
+                        if (window.innerWidth < 768) {
+                            userList.style.transform = 'translateX(-100%)';
+                        }
+                    });
+                });
+            } else {
+                // На десктопах сбрасываем стили
+                console.log('Десктоп: сбрасываем стили для бургер-меню');
+                userList.style.transform = '';
+            }
+        } else {
+            console.error('Элементы бургер-меню не найдены');
+        }
+    }
+    
+    // Начальная настройка
+    setupBurgerMenu();
+    
+    // Слушаем изменения размера окна
+    window.addEventListener('resize', () => {
+        setupBurgerMenu();
+    });
+});
+</script>
+
+<!-- Исправляем основной обработчик клика на элементы чата -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Находим все элементы чатов в списке
+        const chatItems = document.querySelectorAll('#chat-list li');
+        const userList = document.querySelector('.user-list');
+        
+        // Добавляем обработчик события клика на каждый элемент
+        chatItems.forEach(item => {
+            item.addEventListener('click', function() {
+                const chatId = this.getAttribute('data-chat-id');
+                const chatType = this.getAttribute('data-chat-type');
+                
+                if (!chatId || !chatType) return;
+                
+                // Отправляем запрос на маркировку сообщений как прочитанных
+                fetch(`/chats/${chatType}/${chatId}/mark-read`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        // Если запрос успешный, удаляем счетчик непрочитанных сообщений
+                        const unreadCountElement = this.querySelector('.unread-count');
+                        if (unreadCountElement) {
+                            unreadCountElement.remove();
+                        }
+                    }
+                    return response.json();
+                })
+                .catch(error => {
+                    console.error('Ошибка при маркировке сообщений как прочитанных:', error);
+                });
+                
+                // Скрываем меню только на мобильных устройствах
+                if (window.innerWidth < 768 && userList) {
+                    userList.style.transform = 'translateX(-100%)';
+                }
+            });
+        });
+    });
+</script>
 </body>

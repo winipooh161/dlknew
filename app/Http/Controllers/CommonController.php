@@ -38,6 +38,43 @@ class CommonController extends Controller
             return redirect()->route('brifs.index')
                 ->with('error', 'Бриф не найден или не принадлежит данному пользователю.');
         }
+
+        // Если страница равна 0 (выбор комнат)
+        if ($page == 0) {
+            $rooms = [
+                ['key' => 'room_prihod',       'title' => 'Прихожая', 'format' => 'room', 'type' => 'checkbox'],
+                ['key' => 'room_detskaya',      'title' => 'Детская', 'format' => 'room', 'type' => 'checkbox'],
+                ['key' => 'room_kladovaya',      'title' => 'Кладовая', 'format' => 'room', 'type' => 'checkbox'],
+                ['key' => 'room_kukhni_i_gostinaya','title' => 'Кухня и гостиная', 'format' => 'room', 'type' => 'checkbox'],
+                ['key' => 'room_gostevoi_sanuzel','title' => 'Гостевой санузел', 'format' => 'room', 'type' => 'checkbox'],
+                ['key' => 'room_gostinaya',      'title' => 'Гостиная', 'format' => 'room', 'type' => 'checkbox'],
+                ['key' => 'room_rabocee_mesto',  'title' => 'Рабочее место', 'format' => 'room', 'type' => 'checkbox'],
+                ['key' => 'room_stolovaya',      'title' => 'Столовая', 'format' => 'room', 'type' => 'checkbox'],
+                ['key' => 'room_vannaya',        'title' => 'Ванная комната', 'format' => 'room', 'type' => 'checkbox'],
+                ['key' => 'room_kukhnya',        'title' => 'Кухня', 'format' => 'room', 'type' => 'checkbox'],
+                ['key' => 'room_kabinet',        'title' => 'Кабинет', 'format' => 'room', 'type' => 'checkbox'],
+                ['key' => 'room_spalnya',        'title' => 'Спальня', 'format' => 'room', 'type' => 'checkbox'],
+                ['key' => 'room_garderobnaya',   'title' => 'Гардеробная', 'format' => 'room', 'type' => 'checkbox'],
+                ['key' => 'room_druge',          'title' => 'Другое', 'format' => 'room', 'type' => 'checkbox'],
+            ];
+            // После выбора комнат все остальные страницы остаются согласно исходному массиву вопросов
+            $questions = [ 
+                // ...existing pages от 1 до 15...
+            ];
+            $totalPages = count($questions) + 1; // +1 за страницу выбора комнат
+            return view('common.questions', [
+                'questions'   => $rooms,
+                'page'        => 0,
+                'user'        => Auth::user(),
+                'totalPages'  => $totalPages,
+                'brif'        => $brif,
+                'title'       => 'Выберите комнаты',
+                'subtitle'    => 'Отметьте те комнаты, которые будут использоваться в брифе',
+                'title_site'  => "Процесс создания Общего брифа | Личный кабинет Экспресс-дизайн"
+            ]);
+        }
+
+        // Исходный массив вопросов (страницы 1..15)
         $questions = [
             1 => [
                 ['key' => 'question_1_1', 'title' => 'Какое количество членов семьи собирается проживать в квартире или доме?', 'subtitle' => 'Опишите всех членов семьи с их возрастом', 'type' => 'textarea', 'placeholder' => 'Пример: Варвара 24г, Дочь 23г', 'format' => 'default'],
@@ -242,6 +279,36 @@ class CommonController extends Controller
                 ['key' => 'question_15_1', 'title' => 'Другое', 'subtitle' => '', 'type' => 'textarea', 'placeholder' => 'Введите желаемую сумму.', 'format' => 'default'],
             ],
         ];
+
+        // Если страница не нулевая, применяем фильтрацию по выбранным комнатам
+        if ($page != 0) {
+            // Получаем список выбранных комнат из JSON
+            $selectedRooms = json_decode($brif->rooms, true) ?? [];
+            
+            // Эти страницы содержат вопросы по комнатам в формате FAQ
+            $roomQuestionPages = [3, 5, 6, 11, 12, 13, 14];
+            
+            if (in_array($page, $roomQuestionPages) && !empty($selectedRooms)) {
+                // Получаем названия комнат (значения из selectedRooms)
+                $roomTitles = array_values($selectedRooms);
+                
+                // Фильтруем вопросы на странице, оставляя только общие и те, что относятся к выбранным комнатам
+                $questions[$page] = array_filter($questions[$page], function($question) use ($roomTitles) {
+                    // Если формат вопроса faq и заголовок совпадает с названием комнаты
+                    if ($question['format'] == 'faq') {
+                        foreach ($roomTitles as $roomTitle) {
+                            // Если заголовок вопроса совпадает с названием комнаты или заголовок "Другое"
+                            if ($question['title'] == $roomTitle || $question['title'] == 'Другое') {
+                                return true;
+                            }
+                        }
+                        return false; // Если комната не выбрана, не показываем вопрос
+                    }
+                    return true; // Другие форматы вопросов показываем всегда
+                });
+            }
+        }
+
        // Общие заголовки для страниц
        $titles = [
         1 => [
@@ -344,7 +411,8 @@ class CommonController extends Controller
             'answers'      => 'nullable|array',
             'price'        => 'nullable|numeric',
             'documents'    => 'nullable|array',
-            'documents.*'  => 'file|max:25600|mimes:pdf,xlsx,xls,doc,docx,jpg,jpeg,png,heic,heif'
+            'documents.*'  => 'file|max:25600|mimes:pdf,xlsx,xls,doc,docx,jpg,jpeg,png,heic,heif',
+            'skip_page'    => 'nullable|boolean'
         ]);
     
         // Находим бриф по ID и по текущему пользователю
@@ -357,20 +425,49 @@ class CommonController extends Controller
                 ->with('error', 'Бриф не найден или не принадлежит данному пользователю.');
         }
     
+        // Обработка страницы выбора комнат (page 0)
+        if ($page == 0) {
+            $selectedRooms = $request->input('answers', []);
+            $brif->rooms = json_encode($selectedRooms);
+            $brif->current_page = 1;
+            $brif->save();
+            return redirect()->route('common.questions', ['id' => $brif->id, 'page' => 1]);
+        }
+    
         // Если передано поле price — обновляем его
         if (isset($data['price'])) {
             $brif->price = $data['price'];
         }
     
-        // Обновляем ответы в соответствующих колонках таблицы
-        if (isset($data['answers'])) {
-            foreach ($data['answers'] as $key => $answer) {
-                if (\Illuminate\Support\Facades\Schema::hasColumn('commons', $key)) {
-                    $brif->$key = $answer;
+        // Проверяем, пропущена ли страница
+        $isSkipped = (bool)$request->input('skip_page', 0);
+        
+        // Если страница не пропущена, сохраняем ответы
+        if (!$isSkipped) {
+            // Обновляем ответы в соответствующих колонках таблицы
+            if (isset($data['answers'])) {
+                foreach ($data['answers'] as $key => $answer) {
+                    if (\Illuminate\Support\Facades\Schema::hasColumn('commons', $key)) {
+                        $brif->$key = $answer;
+                    }
                 }
             }
+            
+            // Обновляем массив пропущенных страниц - убираем текущую страницу, если она была пропущена ранее
+            $skippedPages = json_decode($brif->skipped_pages ?? '[]', true);
+            if (($key = array_search($page, $skippedPages)) !== false) {
+                unset($skippedPages[$key]);
+                $brif->skipped_pages = json_encode(array_values($skippedPages));
+            }
+        } else {
+            // Если страница пропущена, добавляем ее в массив пропущенных
+            $skippedPages = json_decode($brif->skipped_pages ?? '[]', true);
+            if (!in_array($page, $skippedPages)) {
+                $skippedPages[] = $page;
+                $brif->skipped_pages = json_encode($skippedPages);
+            }
         }
-    
+        
         // Если это страница 15 — обработка загрузки файлов
         if ($page == 15 && $request->hasFile('documents')) {
             $uploadedFiles = [];
@@ -437,6 +534,18 @@ class CommonController extends Controller
         $nextPage = $page + 1;
         // Если следующей страницы нет — завершаем заполнение брифа
         if (!isset($questionsMapping[$nextPage])) {
+            $skippedPages = json_decode($brif->skipped_pages ?? '[]', true);
+            
+            // Если есть пропущенные страницы, перенаправляем на первую из них
+            if (!empty($skippedPages)) {
+                $nextPage = min($skippedPages);
+                $brif->current_page = $nextPage;
+                $brif->save();
+                return redirect()->route('common.questions', ['id' => $brif->id, 'page' => $nextPage])
+                    ->with('warning', 'У вас остались пропущенные вопросы. Пожалуйста, заполните их.');
+            }
+            
+            // Если пропущенных страниц нет - завершаем бриф
             $brif->status = 'Завершенный';
             $brif->save();
     
@@ -455,8 +564,8 @@ class CommonController extends Controller
                     'link'          => "/common/{$brif->id}",
                 ]);
             }
-    
-            return redirect()->route('brifs.index')
+            // Изменено: редирект на страницу сделки
+            return redirect()->route('deal.user')
                 ->with('success', 'Бриф успешно заполнен!');
         }
     

@@ -4,12 +4,11 @@
             <!-- Кнопка закрытия и навигация по модулям -->
             <div class="button__points">
                 <span class="close-modal" id="closeModalBtn">&times;</span>
-                <button data-target="Заказ" class="buttonSealaActive">Заказ</button>
+            <button data-target="Заказ" class="buttonSealaActive">Заказ</button>
                 <button data-target="Работа над проектом">Работа над проектом</button>
-                @if (in_array(Auth::user()->status, ['coordinator', 'admin']))
+            @if (in_array(Auth::user()->status, ['coordinator', 'admin']))
                     <button data-target="Финал проекта">Финал проекта</button>
-                @endif
-                {{-- <button data-target="Лента">Лента</button> --}}
+            @endif
                 <ul>
                     <li>
                         <a href="#" onclick="event.preventDefault(); copyRegistrationLink('{{ $deal->registration_token ? route('register_by_deal', ['token' => $deal->registration_token]) : '#' }}')">
@@ -279,4 +278,4 @@
         };
     
     });
-    </script>
+</script>

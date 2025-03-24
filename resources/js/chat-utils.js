@@ -338,10 +338,10 @@ export async function fetchNewMessages() {
                 markMessagesAsRead(window.currentChatId, window.currentChatType);
             }
         } else {
-            console.error("Ошибка получения новых сообщений:", response.status, response.statusText);
+         
         }
     } catch (error) {
-        console.error('Ошибка при получении новых сообщений:', error);
+      
     }
 }
 

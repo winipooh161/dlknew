@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
@@ -28,27 +29,20 @@ class HomeController extends Controller
         switch ($user->status) {
             case 'user':
                 return redirect()->route('brifs.index');
-            
             case 'coordinator':
                 return redirect()->route('deal.cardinator');
-                case 'architect':
-                    return redirect()->route('deal.cardinator');
-            
-                    case 'designer':
-                        return redirect()->route('deal.cardinator'); 
-                        case 'visualizer':
-                            return redirect()->route('deal.cardinator');
-                       
-            
+            case 'architect':
+                return redirect()->route('deal.cardinator');
+            case 'designer':
+                return redirect()->route('deal.cardinator');
+            case 'visualizer':
+                return redirect()->route('deal.cardinator');
             case 'partner':
                 return redirect()->route('estimate');
-            
             case 'admin':
                 return redirect()->route('admin');
-            
             case 'support':
                 return redirect()->route('chats.index');
-            
             default:
                 // Optionally, handle unexpected statuses
                 Auth::logout();

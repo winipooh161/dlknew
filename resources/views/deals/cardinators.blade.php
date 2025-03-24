@@ -111,15 +111,15 @@
                 <div class="faq__body__deal" id="all-deals-container">
                     <h4 class="flex">Все сделки</h4>
                     @if ($deals->isEmpty())
-                        <div class="faq_block__deal faq_block-blur brifs__button__create-faq_block__deal">
+                        <div class="faq_block__deal faq_block-blur brifs__button__create-faq_block__deal" onclick="window.location.href='{{ route('deals.create') }}'">
                             @if (in_array(Auth::user()->status, ['coordinator', 'admin', 'partner']))
-                                <button onclick="window.location.href='{{ route('deals.create') }}'">
+                                <button >
                                     <img src="/storage/icon/add.svg" alt="Создать сделку">
                                 </button>
                             @endif
                         </div>
                     @else
-                        <div class="faq_block__deal faq_block-blur brifs__button__create-faq_block__deal">
+                        <div class="faq_block__deal faq_block-blur brifs__button__create-faq_block__deal" onclick="window.location.href='{{ route('deals.create') }}'">
                             @if (in_array(Auth::user()->status, ['coordinator', 'admin', 'partner']))
                                 <button onclick="window.location.href='{{ route('deals.create') }}'">
                                     <img src="/storage/icon/add.svg" alt="Создать сделку">

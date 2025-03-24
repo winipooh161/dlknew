@@ -1,5 +1,3 @@
-
-
 @if(session('error'))
     <div class="alert alert-danger">{{ session('error') }}</div>
 @endif
@@ -16,14 +14,14 @@
 
 <form id="create-deal-form" action="{{ route('deals.store') }}" method="POST" enctype="multipart/form-data">
     @csrf
+    <!-- Добавляем скрытые поля для datestamps, которые заполняются скриптом -->
+    <input type="hidden" name="start_date" id="start_date">
+    <input type="hidden" name="project_duration" id="project_duration">
+    <input type="hidden" name="project_end_date" id="project_end_date">
 
     <!-- БЛОК: Основная информация -->
     <fieldset class="module">
         <legend><h1>{{ $title_site }}</h1></legend>
-        <div class="form-group-deal">
-            <label for="project_number">№ проекта (пример: Проект 6303): <span class="required">*</span></label>
-            <input type="text" id="project_number" name="project_number" class="form-control">
-        </div>
        
         <div class="form-group-deal">
             <label for="price_service_option">Услуга по прайсу: <span class="required">*</span></label>
@@ -92,34 +90,45 @@
                 });
             });
         </script>
-        <div class="form-group-deal">
-            <label for="office_partner_id">Офис/Партнер:</label>
-            <select id="office_partner_id" name="office_partner_id" class="form-control">
-                <option value="">-- Не выбрано --</option>
-                @foreach($partners as $partner)
-                    <option value="{{ $partner->id }}">{{ $partner->name }}</option>
-                @endforeach
-            </select>
-        </div>
-        <div class="form-group-deal">
-            <label for="completion_responsible">Кто делает комплектацию:</label>
-            <select name="completion_responsible" id="completion_responsible" class="form-control">
-                <option value="">-- Выберите вариант --</option>  <option value="">-- Не выбрано --</option>
-                <option value="Вариант 1">Вариант 1</option>" {{ old('completion_responsible') == 'клиент' ? 'selected' : '' }}>Клиент</option>
-                <option value="партнер" {{ old('completion_responsible') == 'партнер' ? 'selected' : '' }}>Партнер</option>
-                <option value="шопинг-лист" {{ old('completion_responsible') == 'шопинг-лист' ? 'selected' : '' }}>Шопинг-лист</option>
-                <option value="закупки и снабжение от УК" {{old('completion_responsible') == 'закупки и снабжение от УК' ? 'selected' : '' }}>Нужны закупки и снабжение от УК</option>
-            </select>
-        </div>
-        <div class="form-group-deal">
-            <label for="coordinator_id">Отв. координатор:</label>
-            <select id="coordinator_id" name="coordinator_id" class="form-control">
-                <option value="">-- Не выбрано (по умолчанию текущий пользователь) --</option>
-                @foreach($coordinators as $coord)
-                    <option value="{{ $coord->id }}">{{ $coord->name }}</option>
-                @endforeach
-            </select>
-        </div>
+        <!-- Убираем блок выбора партнёра, если пользователь partner -->
+        @if(auth()->user()->status == 'partner')
+            <div class="form-group-deal">
+                <label>Партнер</label>
+                <p>{{ auth()->user()->name }}</p>
+                <input type="hidden" name="office_partner_id" value="{{ auth()->id() }}">
+            </div>
+        @else
+            <!-- Если не partner, отображаем выбор партнеров -->
+            <div class="form-group-deal">
+                <label for="office_partner_id">Партнер:</label>
+                <select id="office_partner_id" name="office_partner_id" class="form-control">
+                    <option value="">-- Не выбрано --</option>
+                    @foreach($partners as $partner)
+                        <option value="{{ $partner->id }}">{{ $partner->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+        @endif
+
+        <!-- Убираем блок выбора координатора, если пользователь coordinator -->
+        @if(auth()->user()->status == 'coordinator')
+            <div class="form-group-deal">
+                <label>Отв. координатор</label>
+                <p>{{ auth()->user()->name }}</p>
+                <input type="hidden" name="coordinator_id" value="{{ auth()->id() }}">
+            </div>
+        @else
+            <!-- Если не coordinator, отображаем выбор координаторов -->
+            <div class="form-group-deal">
+                <label for="coordinator_id">Отв. координатор:</label>
+                <select id="coordinator_id" name="coordinator_id" class="form-control">
+                    <option value="">-- Не выбрано (по умолчанию текущий пользователь) --</option>
+                    @foreach($coordinators as $coord)
+                        <option value="{{ $coord->id }}">{{ $coord->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+        @endif
         <div class="form-group-deal">
             <label for="total_sum">Общая сумма:</label>
             <input type="number" step="0.01" id="total_sum" name="total_sum" class="form-control">
@@ -144,6 +153,7 @@
             <label for="comment">Общий комментарий:</label>
             <textarea id="comment" name="comment" class="form-control" rows="3" maxlength="1000"></textarea>
         </div>
+       
     </fieldset>
     <button type="submit" class="btn btn-primary">Создать сделку</button>
 </form>

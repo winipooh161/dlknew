@@ -36,6 +36,16 @@
 }
 
 @media only screen and (max-width: 1180px) {
+    .support-chat-block-skiter {
+ 
+height: max-content;
+ 
+width: 100%;
+ 
+}
+    .deal__responsible {
+        width: 100%;
+    }
     .brif {
         width: 49.2%;
             }
@@ -43,14 +53,14 @@
         display: -webkit-box;
         display: -ms-flexbox;
         display: flex;
-        gap: var(--g20);
+        gap: 0;
         -webkit-box-pack: justify;
-            -ms-flex-pack: justify;
-                justify-content: space-between;
+        -ms-flex-pack: justify;
+        justify-content: space-between;
         -webkit-box-orient: vertical;
         -webkit-box-direction: reverse;
-            -ms-flex-direction: column-reverse;
-                flex-direction: column-reverse;
+        -ms-flex-direction: column-reverse;
+        flex-direction: column-reverse;
     }
 
     .deal__responsible__info h3 {
@@ -113,6 +123,9 @@
 }
 
 @media only screen and (max-width: 980px) {
+    .mb.mobile__ponel ul li button span {
+        color: var(--black);
+    }
     .deal__info__profile {
         width: 100%;
     }
@@ -168,8 +181,11 @@
         display: flex;
     }
     .chat-input button {
-        padding: 0 10px;
-        width: 15%;
+        padding: 0 0px;
+        width: 10%;
+        height: 40px !important;
+        max-height: 40px;
+        min-height: 40px !important;
         }
  
     .chat__block_back {
@@ -183,7 +199,7 @@
   
     .chat-header {
         border-radius: 0;
-        padding: var(--p10);
+        padding: var(--p10) var(--p20);
         position: relative;
         width: 100%;
         position: fixed;
@@ -301,7 +317,7 @@
     }
     .profile__modules {
         width: 100%;
-
+        padding: var(--p10);
     }
     .checkpoint label {
         text-align: left;
@@ -319,6 +335,9 @@
         letter-spacing: 0%;
     }button#send-message {
         width: 12%;
+        height: 100% !important;
+        max-height: 40px;
+        min-height: 40px !important;
     }
     .button__points {
         display: -webkit-box;
@@ -386,7 +405,7 @@
     min-height: 100%;
 }
     .user-list {
-        padding: 0;
+        padding: 20px;
     }
     .chat-container {
         display: -webkit-box;
@@ -400,8 +419,8 @@
         padding-bottom: 70px;
     }
     .chat-messages {
-        min-height: 75vh;
-        max-height: 611px;
+        min-height: max-content;
+        max-height: 523px;
         content: "";
         overflow-y: auto;
         margin-bottom: 10px;
@@ -410,8 +429,19 @@
     }
     .mb.mobile__ponel ul li button {
       
-        max-height: 45px;
-        min-height: 45px !important;
+max-height: 69px;
+      
+display: flex;
+      
+min-height: 64px !important;
+      
+flex-direction: column;
+      
+align-items: center;
+      
+justify-content: center;
+      
+align-content: center;
     }
     .upload__files h6 {
    
@@ -504,7 +534,7 @@
         line-height: 22.95px;
         letter-spacing: 0%;
     }
-    .brifs .brifs__button__create button {max-width: 100%;display: -webkit-box;display: -ms-flexbox;display: flex;gap: var(--g20);min-width: 100%;-webkit-box-pack: center;-ms-flex-pack: center;justify-content: center;}
+    .brifs .brifs__button__create button {max-width: 100%;display: -webkit-box;display: -ms-flexbox;display: flex;gap: var(--g20);min-width: 100%;-webkit-box-pack: center;-ms-flex-pack: center;justify-content: flex-start;}
     .auth__form {
         padding: 130px 15px;
     }
@@ -527,7 +557,7 @@
         font-family: Onest;
         font-weight: 400;
         font-size: 24px !important;
-        line-height: 30.6px;
+        line-height: 24.6px;
         letter-spacing: -2%;
         text-align: center;
     }.div__create_block p {
@@ -542,6 +572,7 @@
     }
     .question_class-button {
         position: fixed;
+        display: none;
         z-index: 30;
         bottom: 80px;
         right: 10px;
@@ -549,7 +580,7 @@
     .bgfff {
         background: #fff;
         height: 100%;
-        max-height: 500px;
+        max-height: 515px;
         border-radius: var(--radius);
     }
     .support__tickets {
@@ -683,7 +714,7 @@
     }
 
     .brifs__section.brifs__section__finished {
-        padding-bottom: 100px;
+        /* padding-bottom: 100px; */
     }
 
     .faq__body {
@@ -717,11 +748,12 @@
 
     .profile__info {
         width: 100%;
+        padding: var(--p10);
     }
 
     .profile__form {
         width: 100%;
-        padding-bottom: 100px;
+        /* padding-bottom: 100px; */
     }
 
     .profile__form form {
@@ -785,8 +817,8 @@
 
     .mb.mobile__ponel button {
         padding: 10px;
-        width: 50px;
-        height: 50px;
+        width: 100px;
+        height: 79px;
         background: none;
     }
     .pointblock {
@@ -920,8 +952,13 @@
 }
 
 @media only screen and (max-width: 580px) {
+  
+    .mb.mobile__ponel ul li button span {
+        color: var(--black);
+        font-size: calc(100% - 4px);
+    }
     .form__body {
-        padding: var(--p20);
+        padding: var(--p10);
     }
     h1 {
     
@@ -1020,6 +1057,10 @@
     }
 
 @media only screen and (max-width: 480px) {
+    .header__user__name.flex.exit a {
+        width: 100%;
+     height: 100%; 
+        }
     .deal__avatar {
         width: 100%;
     }
@@ -1062,13 +1103,13 @@ align-items: flex-start;
     }
 
     .mb.mobile__ponel ul li {
-        width: 45px;
+        width: 60px;
         height: 45px;
     }
 
     .mb.mobile__ponel ul li button {
         width: 100%;
-        padding: 6px;
+        padding: 7px;
         display: -webkit-box;
         display: -ms-flexbox;
         display: flex;
@@ -1080,20 +1121,21 @@ align-items: flex-start;
         justify-content: center;
         -ms-flex-line-pack: center;
         align-content: center;
-        max-height: 45px;
-        min-height: 45px !important;
+        max-height: 60px;
+        min-height: 50px !important;
+        flex-direction: column;
     }
 
         .header__user__logo {
         border-radius: 50%;
         overflow: hidden;
-        width: 40px;
-        height: 30px;
+        width: 33px;
+        height: 33px;
     }
 }
 
 @media only screen and (max-width: 360px) {
-
+  
     .deal__cardinator__info p a {
         font-size: 13px !important;
     }
@@ -1122,6 +1164,16 @@ align-items: flex-start;
     }  
 
 @media (max-width: 768px) {
+    .header__user__name.flex.exit {
+        gap: 5px;
+        padding: 2px 5px; }
+    .brif p {
+        color: rgb(68, 68, 68);
+        font-family: var(--onest);
+        font-weight: 400;
+        line-height: 12.75px;
+        font-size: 12px !important;
+    }
     .modal__deal .modal-content form {
         padding: 0;
     }
@@ -1178,8 +1230,10 @@ align-items: flex-start;
         padding: var(--p20) !important;
     }
     .chat-input button.emoji-button {
-        left: 65px;
-        height: 50px !important;
+        left: 46px;
+        height: 40px !important;
+        max-height: 40px;
+        min-height: 40px !important;
     }
     .chat-input {
         padding: 0;
@@ -1187,7 +1241,7 @@ align-items: flex-start;
         width: 100%;
         left: 0;
         z-index: 999;
-        bottom: 70px;
+        bottom: 88px;
         /* padding-bottom: 100px; */
     }
     .user-list ul {
@@ -1201,6 +1255,16 @@ align-items: flex-start;
     }
 }
 @media only screen and (max-width: 768px) {
+    .header__body {
+        max-height: 100px;
+    }
+    .deal__container__modul {
+        padding: 0;
+    }
+    .deals-list-user h1 p {
+        padding: 10px 15px;
+        }
+   
     .burger-users {
         direction: flex;
     }
@@ -1208,5 +1272,76 @@ align-items: flex-start;
         transition: transform 0.3s ease;
         transform: translateX(-100%);
         z-index: 999999;
+    }
+}
+
+@media (min-width:768px) {
+    .btn-open-chat {
+        display: none !important;
+    }
+}
+@media (max-width:767px) {
+    button#send-message {
+        right: 5px;
+    }
+    .chat-input .attach-file {
+        left: 5px;
+    }
+    .chat-messages ul {
+        
+        padding-bottom: 100px !important;
+    
+    }
+    span.select2.select2-container.select2-container--default {
+        width: 300px !important;
+      
+    }
+   .selection {
+        min-width: 300px;
+        width: 100% !important;
+        max-width: 600px !important;
+      
+    }
+    .form-group-deal {
+     
+min-height: 100px;
+     
+position: relative;
+    }
+    form#create-deal-form .module {
+        padding: var(--p10);
+    }
+    table#dealTable {
+        overflow-y: hidden !important;
+        /* width: 100%; */
+    }
+    .btn-open-chat {
+        display: flex;
+    }
+    .deal__status-button {
+        display: flex;
+        gap: var(--g20);
+        flex-direction: column;
+        align-content: flex-start;
+        align-items: flex-start;
+    }
+    .deal__responsible {
+        padding: 0;
+    }
+    .deal__status {
+        width: 100%;
+     
+    }.chat-input textarea {
+        padding: 10px 10px 10px 100px;
+    }
+    #chatModal .chat-messages ul {
+        padding: 0 0 50px 0;
+    }
+    .chat-block { 
+        display: none; /* скрываем inline чат */
+    }
+    .btn-open-chat {
+        display: block !important;
+     
     }
 }

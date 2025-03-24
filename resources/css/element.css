@@ -269,7 +269,7 @@ body {
 }
 
 .chat-messages {
-    border: 1px solid rgb(204, 204, 204);
+    /* border: 1px solid rgb(204, 204, 204); */
     border-radius: 0;
     display: -webkit-box;
     display: -ms-flexbox;
@@ -1152,7 +1152,7 @@ button.remove-button {
     max-height: 100vh;
     overflow-y: auto;
     margin-bottom: 10px;
-    border: 1px solid #eee;
+    /* border: 1px solid #eee; */
     padding: 10px;
 }
 .chat-messages ul {

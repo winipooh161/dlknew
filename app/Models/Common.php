@@ -8,7 +8,7 @@ class Common extends Model
 
     protected $fillable = [
         'id', 'title', 'article', 'description', 'status', 'price', 'current_page', 'user_id', 'deal_id',
-    ];
+    ]; 
 
     // Связь с координатором
     public function coordinator()

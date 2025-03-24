@@ -4,14 +4,6 @@
     "src": "public/css/animate.css",
     "isEntry": true
   },
-  "public/img/auth/authFon.png": {
-    "file": "assets/authFon-Dr30-3FL.png",
-    "src": "public/img/auth/authFon.png"
-  },
-  "public/img/brifs/formFONbrif.png": {
-    "file": "assets/formFONbrif-Dxtcab3H.png",
-    "src": "public/img/brifs/formFONbrif.png"
-  },
   "public/js/jquery-3.6.0.min.js": {
     "file": "assets/jquery-3.6.0.min-5GtrIU7X.js",
     "name": "jquery-3.6.0.min",
@@ -30,7 +22,7 @@
     "isEntry": true
   },
   "resources/css/element.css": {
-    "file": "assets/element-DjFQa8nm.css",
+    "file": "assets/element-C7-Q6N8N.css",
     "src": "resources/css/element.css",
     "isEntry": true
   },
@@ -40,12 +32,12 @@
     "isEntry": true
   },
   "resources/css/mobile.css": {
-    "file": "assets/mobile-DOwLBs32.css",
+    "file": "assets/mobile-vlBDfS2E.css",
     "src": "resources/css/mobile.css",
     "isEntry": true
   },
   "resources/css/style.css": {
-    "file": "assets/style-BUNvQf79.css",
+    "file": "assets/style-BuyJhe-J.css",
     "src": "resources/css/style.css",
     "isEntry": true
   },
@@ -109,12 +101,8 @@
     "file": "assets/andantinoscript-DdKsraX8.ttf",
     "src": "resources/fonts/andantinoscript.ttf"
   },
-  "resources/icon/cursor.png": {
-    "file": "assets/cursor-Ds2YVdKN.png",
-    "src": "resources/icon/cursor.png"
-  },
   "resources/js/bootstrap.js": {
-    "file": "assets/bootstrap-OSiMVbGE.js",
+    "file": "assets/bootstrap-hEjEL3jN.js",
     "name": "bootstrap",
     "src": "resources/js/bootstrap.js",
     "isEntry": true,
@@ -124,7 +112,7 @@
     ]
   },
   "resources/js/chat-utils.js": {
-    "file": "assets/chat-utils-BxoIr4m-.js",
+    "file": "assets/chat-utils-CP2X_O-L.js",
     "name": "chat-utils",
     "src": "resources/js/chat-utils.js",
     "isEntry": true,
@@ -134,7 +122,7 @@
     ]
   },
   "resources/js/chat.js": {
-    "file": "assets/chat-DpHDejYL.js",
+    "file": "assets/chat-CPBTjTtW.js",
     "name": "chat",
     "src": "resources/js/chat.js",
     "isEntry": true,
@@ -156,7 +144,7 @@
     "isEntry": true
   },
   "resources/js/mask.js": {
-    "file": "assets/mask-C5cDIk-_.js",
+    "file": "assets/mask-Cf7uwzs5.js",
     "name": "mask",
     "src": "resources/js/mask.js",
     "isEntry": true,
@@ -166,7 +154,7 @@
     ]
   },
   "resources/js/message-actions.js": {
-    "file": "assets/message-actions-56wFqnI5.js",
+    "file": "assets/message-actions-C6HyafTF.js",
     "name": "message-actions",
     "src": "resources/js/message-actions.js",
     "isEntry": true,

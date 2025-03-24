@@ -59,8 +59,6 @@ Route::middleware('auth')->group(function () {
     Route::post('/profile/update', [ProfileController::class, 'updateProfile'])->name('profile.update');
     Route::post('/profile/update-all', [ProfileController::class, 'updateProfileAll'])->name('profile.update_all');
     Route::post('/profile/change-password', [ProfileController::class, 'changePassword']);
-
-    // Брифы и прочее
     Route::get('/brifs', [BrifsController::class, 'index'])->name('brifs.index');
     Route::post('/brifs/store', [BrifsController::class, 'store'])->name('brifs.store');
     Route::delete('/brifs/{brif}', [BrifsController::class, 'destroy'])->name('brifs.destroy');
@@ -69,11 +67,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/common/create', [BrifsController::class, 'common_create'])->name('common.create');
     Route::post('/common', [BrifsController::class, 'common_store'])->name('common.store');
     Route::get('/common/{id}', [BrifsController::class, 'common_show'])->name('common.show');
+    Route::get('/common/{id}/download-pdf', [BrifsController::class, 'common_download_pdf'])->name('common.download.pdf');
     Route::get('/commercial/questions/{id}/{page}', [CommercialController::class, 'questions'])->name('commercial.questions');
     Route::post('/commercial/questions/{id}/{page}', [CommercialController::class, 'saveAnswers'])->name('commercial.saveAnswers');
     Route::get('/commercial/create', [BrifsController::class, 'commercial_create'])->name('commercial.create');
     Route::post('/commercial', [BrifsController::class, 'commercial_store'])->name('commercial.store');
     Route::get('/commercial/{id}', [BrifsController::class, 'commercial_show'])->name('commercial.show');
+    Route::get('/commercial/{id}/download-pdf', [BrifsController::class, 'commercial_download_pdf'])->name('commercial.download.pdf');
 
     Route::get('/deal/{deal}/chat', [DealsController::class, 'showDealChat'])->name('deal.chat');
     // Сделка для пользователя
@@ -220,4 +220,3 @@ Route::post('/deal/update/{id}', [DealsController::class, 'updateDeal'])
     Route::post('/chats/{chat}/messages/{message}/pin', [ChatController::class, 'pinMessage']);
     // Получение новых сообщений (для автообновления)
     Route::post('/chats/{chatType}/{chatId}/new-messages', [ChatController::class, 'getNewMessages'])->name('chats.new-messages');
-    

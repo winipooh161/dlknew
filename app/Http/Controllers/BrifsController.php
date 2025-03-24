@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Common;
 use App\Models\Deal;
 use App\Models\Commercial;
+use PDF; // Добавляем в начало файла
 class BrifsController extends Controller
 {
     /**
@@ -77,9 +78,9 @@ class BrifsController extends Controller
             'user_id' => auth()->id(), // Привязка к текущему пользователю
         ]);
         return redirect()->route('common.questions', [
-                   'id'   => $brif->id,
-                   'page' => 1
-               ]);
+            'id'   => $brif->id,
+            'page' => 0 // изменено: начинаем с нулевой страницы выбора комнат
+        ]);
     }
     public function commercial_create()
     { $user = Auth::user();
@@ -494,7 +495,7 @@ class BrifsController extends Controller
     
             return redirect()->route('common.questions', [
                 'id'   => $brif->id,
-                'page' => 1
+                'page' => 0 // изменено: перенаправление на страницу выбора комнат
             ]);
         } elseif ($type === 'commercial') {
             // Создание коммерческого брифа
@@ -529,4 +530,156 @@ class BrifsController extends Controller
     return redirect()->back()->with('error', 'Удалить бриф не удалось');
 }
 
+/**
+ * Скачать PDF-версию общего брифа
+ *
+ * @param int $id
+ * @return \Illuminate\Http\Response
+ */
+public function common_download_pdf($id)
+{
+    $title_site = "Общий бриф | PDF";
+    $user = Auth::user();
+    
+    // Находим бриф
+    $brif = Common::findOrFail($id);
+    
+    // Проверяем, имеет ли пользователь доступ к брифу
+    if ($brif->user_id != auth()->id() && !auth()->user()->hasRole(['admin', 'coordinator'])) {
+        return redirect()->route('brifs.index')->with('error', 'У вас нет доступа к этому брифу.');
+    }
+    
+    $pageTitlesCommon = [
+        'Люди, питомцы',
+        'Общая информация',
+        'Зональность',
+        'Балкон',
+        'Предпочтения по комплектации',
+        'Пожелания по освещение',
+        'Кухонная зона',
+        'Теплый пол',
+        'Кондиционирование',
+        'Ванная комната',
+        'Напольные покрытия',
+        'Освещение',
+        'Отделка потолка',
+        'Бюджет',
+        'Заключение',
+    ];
+    
+    // Определяем полный массив вопросов вместо комментария
+    $questions = [
+        1 => [
+            ['key' => 'question_1_1', 'title' => 'Какое количество членов семьи собирается проживать в квартире или доме?', 'subtitle' => 'Опишите всех членов семьи с их возрастом', 'type' => 'textarea', 'placeholder' => 'Пример: Варвара 24г, Дочь 23г', 'format' => 'default'],
+            ['key' => 'question_1_2', 'title' => 'Какое количество домашних животных и комнатных растений находится в наличии?', 'subtitle' => '(вероятность пополнения в ближайшем будущем)', 'type' => 'textarea', 'placeholder' => 'Пример: Кактус 2шт, Барсик кот', 'format' => 'default'],
+        ],
+        2 => [
+            ['key' => 'question_2_1', 'title' => 'Есть ли у вас мебель? Укажите ее размеры:', 'subtitle' => '', 'type' => 'textarea', 'placeholder' => 'Например, Кровать - 160*190см, Диван: длина – 150-170 см, ширина – 60-70 см', 'format' => 'default'],
+            ['key' => 'question_2_2', 'title' => 'Нужен ли проём/арка в несущей стене?', 'subtitle' => '', 'type' => 'textarea', 'placeholder' => 'Нужен ли проём/арка в несущей стене?', 'format' => 'default'],
+            ['key' => 'question_2_3', 'title' => 'Необходимость звукоизоляции', 'subtitle' => '', 'type' => 'textarea', 'placeholder' => 'Например: да, я хочу сделать звукоизоляцию.', 'format' => 'default'],
+            ['key' => 'question_2_4', 'title' => 'Требуется ли перепланировка?', 'subtitle' => '', 'type' => 'textarea', 'placeholder' => 'Опишите, например, какую комнату вы хотите увеличить/уменьшить и для каких целей.', 'format' => 'default'],
+            ['key' => 'question_2_5', 'title' => 'Наличие хобби, предполагающие размещение дополнительных инструментов', 'subtitle' => '', 'type' => 'textarea', 'placeholder' => 'Например: да, я занимаюсь спортом дома. Мне нужно место под хранение спортивного снаряжения.', 'format' => 'default'],
+            ['key' => 'question_2_6', 'title' => 'Как часто к вам приходят гости?', 'subtitle' => '', 'type' => 'textarea', 'placeholder' => 'Опишите, например, какое количество гостей вы принимаете у себя дома. Нужно ли расширить пространство для вашего общения.', 'format' => 'default'],
+        ],
+        // Добавьте здесь остальные вопросы от 3 до 15...
+        // Вы можете взять их из метода common_show
+        3 => [], 4 => [], 5 => [], 6 => [], 7 => [], 8 => [], 9 => [], 10 => [], 11 => [], 12 => [], 13 => [], 14 => [], 15 => []
+    ];
+    
+    // Генерируем PDF из шаблона
+    $pdf = PDF::loadView('common.pdf', [
+        'brif' => $brif, 
+        'user' => $user, 
+        'pageTitlesCommon' => $pageTitlesCommon, 
+        'questions' => $questions
+    ]);
+    
+    // Устанавливаем кодировку UTF-8 для корректного отображения кириллицы
+    $pdf->getDomPDF()->set_option('defaultFont', 'DejaVu Sans');
+    $pdf->getDomPDF()->set_option('isRemoteEnabled', true);
+    
+    // Задаем имя файла для скачивания
+    $filename = "common_brief_{$brif->id}.pdf";
+    
+    // Возвращаем PDF как скачиваемый файл
+    return $pdf->download($filename);
+}
+
+/**
+ * Скачать PDF-версию коммерческого брифа
+ *
+ * @param int $id
+ * @return \Illuminate\Http\Response
+ */
+public function commercial_download_pdf($id)
+{
+    $title_site = "Коммерческий бриф | PDF";
+    $user = Auth::user();
+    
+    // Находим коммерческий бриф
+    $brif = Commercial::findOrFail($id);
+    
+    // Проверяем, имеет ли пользователь доступ к брифу
+    if ($brif->user_id != auth()->id() && !auth()->user()->hasRole(['admin', 'coordinator'])) {
+        return redirect()->route('brifs.index')->with('error', 'У вас нет доступа к этому брифу.');
+    }
+    
+    // Получаем дополнительные данные для коммерческого брифа
+    $zones = $brif->zones ? json_decode($brif->zones, true) : [];
+    $preferences = $brif->preferences ? json_decode($brif->preferences, true) : [];
+    $price = $brif->zone_budgets ? json_decode($brif->zone_budgets, true) : [];
+    
+    // Вопросы для отображения
+    $questions = [
+        1 => "Зоны и их функционал",
+        2 => "Метраж зон",
+        3 => "Зоны и их стиль оформления",
+        4 => "Мебилировка зон",
+        5 => "Предпочтения отделочных материалов",
+        6 => "Освещение зон",
+        7 => "Кондиционирование зон",
+        8 => "Напольное покрытие зон",
+        9 => "Отделка стен зон",
+        10 => "Отделка потолков зон",
+        11 => "Категорически неприемлемо или нет",
+        12 => "Бюджет на помещения",
+        13 => "Пожелания и комментарии",
+    ];
+    
+    // Формируем предпочтения с названиями вопросов
+    $preferencesFormatted = [];
+    foreach ($zones as $index => $zone) {
+        $zoneName = $zone['name'] ?? "Без названия";
+        $preferencesFormatted[$zoneName] = [];
+        if (isset($preferences["zone_$index"])) {
+            foreach ($preferences["zone_$index"] as $questionKey => $answer) {
+                $questionNumber = str_replace('question_', '', $questionKey);
+                $questionTitle = $questions[$questionNumber] ?? "Вопрос $questionNumber";
+                $preferencesFormatted[$zoneName][] = [
+                    'question' => $questionTitle,
+                    'answer' => $answer,
+                ];
+            }
+        }
+    }
+    
+    // Генерируем PDF из шаблона
+    $pdf = PDF::loadView('commercial.pdf', [
+        'brif' => $brif, 
+        'user' => $user, 
+        'zones' => $zones, 
+        'preferencesFormatted' => $preferencesFormatted,
+        'price' => $price
+    ]);
+    
+    // Устанавливаем кодировку UTF-8 для корректного отображения кириллицы
+    $pdf->getDomPDF()->set_option('defaultFont', 'DejaVu Sans');
+    $pdf->getDomPDF()->set_option('isRemoteEnabled', true);
+    
+    // Задаем имя файла для скачивания
+    $filename = "commercial_brief_{$brif->id}.pdf";
+    
+    // Возвращаем PDF как скачиваемый файл
+    return $pdf->download($filename);
+}
 }

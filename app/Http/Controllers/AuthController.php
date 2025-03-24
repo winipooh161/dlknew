@@ -154,8 +154,10 @@ class AuthController extends Controller
         }
     
         if (User::where('phone', $phone)->exists()) {
-            return redirect()->route('login.password')->with('error', 'Пользователь с таким номером телефона уже зарегистрирован.');
+            // Изменён редирект при наличии дубликата телефона
+            return redirect()->back()->with('error', 'Пользователь с таким номером телефона уже зарегистрирован.');
         }
+    
     
         $validated = $request->validate([
             'name' => 'required|string|max:255',
