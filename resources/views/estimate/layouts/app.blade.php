@@ -11,6 +11,7 @@
     <div id="loading-screen">
         <img src="/storage/icon/fool_logo.svg" alt="Loading">
     </div>
+   
     @if (session('success'))
         <div id="success-message" class="success-message">
             {{ session('success') }}
@@ -21,7 +22,7 @@
             {{ session('error') }}
         </div>
     @endif
-    <main class="py-4">
+    <main >
         {{-- <div class="back__fon">
             <svg class="animate-on-visibility"  width="619" height="681" viewBox="0 0 619 681" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path

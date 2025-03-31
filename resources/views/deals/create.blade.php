@@ -110,6 +110,20 @@
             </div>
         @endif
 
+        <!-- Добавляем поле "Кто делает комплектацию" -->
+        @if(in_array(auth()->user()->status, ['partner', 'coordinator', 'admin']))
+            <div class="form-group-deal">
+                <label for="completion_responsible">Кто делает комплектацию:<span class="required">*</span></label>
+                <select id="completion_responsible" name="completion_responsible" class="form-control" required>
+                    <option value="">-- Выберите --</option>
+                    <option value="клиент">Клиент</option>
+                    <option value="партнер">Партнер</option>
+                    <option value="шопинг-лист">Шопинг-лист</option>
+                    <option value="закупки и снабжение от УК">Нужны закупки и снабжение от УК</option>
+                </select>
+            </div>
+        @endif
+
         <!-- Убираем блок выбора координатора, если пользователь coordinator -->
         @if(auth()->user()->status == 'coordinator')
             <div class="form-group-deal">
@@ -118,16 +132,7 @@
                 <input type="hidden" name="coordinator_id" value="{{ auth()->id() }}">
             </div>
         @else
-            <!-- Если не coordinator, отображаем выбор координаторов -->
-            <div class="form-group-deal">
-                <label for="coordinator_id">Отв. координатор:</label>
-                <select id="coordinator_id" name="coordinator_id" class="form-control">
-                    <option value="">-- Не выбрано (по умолчанию текущий пользователь) --</option>
-                    @foreach($coordinators as $coord)
-                        <option value="{{ $coord->id }}">{{ $coord->name }}</option>
-                    @endforeach
-                </select>
-            </div>
+           
         @endif
         <div class="form-group-deal">
             <label for="total_sum">Общая сумма:</label>
@@ -166,7 +171,7 @@
 <script>
 $(document).ready(function() {
     // Укажите корректный путь к вашему JSON-файлу
-    var jsonFilePath = '/cities.json';
+    var jsonFilePath = 'cities.json';
 
     // Загружаем JSON-файл
     $.getJSON(jsonFilePath, function(data) {
@@ -198,7 +203,14 @@ $(document).ready(function() {
         $('#client_timezone').select2({
             data: select2Data,
             placeholder: "-- Выберите город --",
-            allowClear: true
+            allowClear: true,
+            // Добавляем обработчик для исправления ошибки aria-hidden
+            dropdownParent: $('body')
+        }).on('select2:open', function() {
+            // Устраняем проблему доступности путем удаления aria-hidden
+            setTimeout(function() {
+                $('.select2-dropdown').parents('[aria-hidden="true"]').removeAttr('aria-hidden');
+            }, 10);
         });
     })
     .fail(function(jqxhr, textStatus, error) {
@@ -288,3 +300,26 @@ $("#package").on("input", function() {
         });
     });
 </script>
+
+<style>
+    /* Обеспечение правильного отображения select2 */
+    body .select2-container--open {
+        z-index: 9999 !important;
+    }
+    
+    body .select2-dropdown {
+        z-index: 10000 !important;
+    }
+    
+    /* Предотвращаем проблемы с aria-hidden */
+    .select2-hidden-accessible {
+        border: 0 !important;
+        clip: rect(0 0 0 0) !important;
+        height: 1px !important;
+        margin: -1px !important;
+        overflow: hidden !important;
+        padding: 0 !important;
+        position: absolute !important;
+        width: 1px !important;
+    }
+</style>

@@ -11,12 +11,6 @@ export default defineConfig({
     laravel({
       input: [
         'resources/js/bootstrap.js',
-        'resources/js/notification.js',
-        'resources/js/message-actions.js',
-        'resources/js/emoji-picker.js',
-        'resources/js/chat-utils.js',
-       
-        'resources/js/chat.js',
         'resources/css/style.css',
         'resources/css/font.css',
         'resources/css/element.css',

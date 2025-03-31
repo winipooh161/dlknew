@@ -31,7 +31,7 @@
                             @else
                                 <p>Бриф не прикреплен</p>
                             @endif
-                            <button class="btn-open-chat" onclick="openChatModal({{ $deal->id }})">Открыть чат</button>
+                         
                             </div>
                         </div>
                     </div>
@@ -63,26 +63,7 @@
                             </ul>
                         </div>
 
-                        @if($deal)
-                        @php
-                            // Ищем групповой чат, связанный с данной сделкой
-                            $groupChat = \App\Models\Chat::where('deal_id', $deal->id)
-                                            ->where('type', 'group')
-                                            ->first();
-                        @endphp
-                        <!-- Контейнер чата -->
-                        <div id="chatContainer-{{ $deal->id }}" class="chat-block">
-                            @if($groupChat)
-                                <div class="deal-chat">
-                                    @include('chats.index', ['dealChat' => $groupChat])
-                                </div>
-                            @else
-                                <p>Групповой чат для этой сделки не создан.</p>
-                            @endif
-                        </div>
-                        <!-- Placeholder для возврата чата -->
-                        <div id="chatPlaceholder-{{ $deal->id }}"></div>
-                        @endif
+                    
                     </div><!-- /.deal__container -->
                 </div><!-- /.deal__body -->
             </div><!-- /.deal -->
@@ -93,39 +74,4 @@
 </div>
 
 <!-- Модальное окно для чата -->
-<div id="chatModal" style="position:fixed; top:0; left:0; width:100%; height:100%; display:none; background:#fff; z-index:9999;">
-    <button class="close-deal-modal" style="" onclick="closeChatModal()">&#8592; Вернуться к сделке</button>
-    <div id="chatModalContent" style="margin-top:50px; height:calc(100% - 50px); overflow:auto;">
-        <!-- Контент чата подставляется динамически -->
-    </div>
-</div>
 
-<script>
-function openChatModal(dealId) {
-    if(window.innerWidth <= 767) {
-        var chatContainer = document.getElementById('chatContainer-' + dealId);
-        var placeholder = document.getElementById('chatPlaceholder-' + dealId);
-        if(chatContainer) {
-            // Перемещаем чат в модальное окно
-            placeholder.appendChild(chatContainer);
-            chatContainer.style.display = 'block';
-            document.getElementById('chatModalContent').appendChild(chatContainer);
-        }
-    }
-    document.getElementById('chatModal').style.display = 'block';
-}
-function closeChatModal() {
-    document.getElementById('chatModal').style.display = 'none';
-    // Возвращаем чат на место, если он был перемещён
-    var modalContent = document.getElementById('chatModalContent');
-    if(modalContent.children.length) {
-        var chatElem = modalContent.children[0];
-        var dealId = chatElem.id.split('-')[1]; // Извлекаем id сделки
-        var placeholder = document.getElementById('chatPlaceholder-' + dealId);
-        if(placeholder) {
-            placeholder.appendChild(chatElem);
-            chatElem.style.display = 'none'; // скрываем чат на мобильном устройстве
-        }
-    }
-}
-</script>

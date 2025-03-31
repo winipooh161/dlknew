@@ -1,0 +1,45 @@
+<div class="emoji-picker" id="emoji-picker">
+    <div class="d-flex flex-wrap">
+        <span class="emoji-item">😀</span>
+        <span class="emoji-item">😃</span>
+        <span class="emoji-item">😄</span>
+        <span class="emoji-item">😁</span>
+        <span class="emoji-item">😆</span>
+        <span class="emoji-item">😅</span>
+        <span class="emoji-item">🤣</span>
+        <span class="emoji-item">😂</span>
+        <span class="emoji-item">🙂</span>
+        <span class="emoji-item">🙃</span>
+        <span class="emoji-item">😉</span>
+        <span class="emoji-item">😊</span>
+        <span class="emoji-item">😇</span>
+        <span class="emoji-item">🥰</span>
+        <span class="emoji-item">😍</span>
+        <span class="emoji-item">🤩</span>
+        <span class="emoji-item">😘</span>
+        <span class="emoji-item">😗</span>
+        <span class="emoji-item">😚</span>
+        <span class="emoji-item">😙</span>
+        <span class="emoji-item">🥲</span>
+        <span class="emoji-item">😋</span>
+        <span class="emoji-item">😛</span>
+        <span class="emoji-item">😜</span>
+        <span class="emoji-item">🤪</span>
+        <span class="emoji-item">😝</span>
+        <span class="emoji-item">🤑</span>
+        <span class="emoji-item">🤗</span>
+        <span class="emoji-item">🤭</span>
+        <span class="emoji-item">🤫</span>
+        <span class="emoji-item">🤔</span>
+        <span class="emoji-item">🤐</span>
+        <span class="emoji-item">🤨</span>
+        <span class="emoji-item">😐</span>
+        <span class="emoji-item">😑</span>
+        <span class="emoji-item">😶</span>
+        <span class="emoji-item">😏</span>
+        <span class="emoji-item">😒</span>
+        <span class="emoji-item">🙄</span>
+        <span class="emoji-item">😬</span>
+        <span class="emoji-item">🤥</span>
+    </div>
+</div>

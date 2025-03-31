@@ -37,32 +37,7 @@ class SupportController extends Controller
         }
         
         // Подсчитываем количество непрочитанных сообщений
-        $unreadCount = Message::where('sender_id', $supportUserId)
-            ->where('receiver_id', $user->id)
-            ->where('is_read', false)
-            ->count();
-            
-        // Получаем последнее сообщение
-        $lastMessage = Message::where(function($query) use ($supportUserId, $user) {
-                $query->where('sender_id', $user->id)
-                      ->where('receiver_id', $supportUserId);
-            })
-            ->orWhere(function($query) use ($supportUserId, $user) {
-                $query->where('sender_id', $supportUserId)
-                      ->where('receiver_id', $user->id);
-            })
-            ->orderBy('created_at', 'desc')
-            ->first();
-            
-        // Подготавливаем данные для чата поддержки
-        $supportChat = [
-            'id' => $supportUserId,
-            'type' => 'personal',
-            'name' => $supportUser->name ?? 'Техническая поддержка',
-            'avatar_url' => $supportUser->avatar_url ?? 'storage/avatars/support_default.png',
-            'unread_count' => $unreadCount,
-            'last_message_time' => $lastMessage ? $lastMessage->created_at : null,
-        ];
+      
         
         return view('support', compact('title_site', 'user', 'supportChat'));
     }
@@ -79,16 +54,9 @@ class SupportController extends Controller
         $lastMessageId = $validated['last_message_id'] ?? 0;
 
         try {
-            $query = Message::where('chat_id', $id)
-                ->where('id', '>', $lastMessageId)
-                ->orderBy('created_at', 'asc')
-                ->with('sender');
+         
+       
 
-            $newMessages = $query->get();
-
-            $newMessages->each(function ($message) {
-                $message->sender_name = optional($message->sender)->name;
-            });
         } catch (\Exception $e) {
             Log::error('Ошибка при получении новых сообщений: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
@@ -98,7 +66,7 @@ class SupportController extends Controller
 
         return response()->json([
             'current_user_id' => $currentUserId,
-            'messages'        => MessageResource::collection($newMessages),
+          
         ], 200);
     }
 
@@ -107,10 +75,7 @@ class SupportController extends Controller
         $currentUserId = Auth::id();
 
         try {
-            Message::where('chat_id', $id)
-                ->where('receiver_id', $currentUserId)
-                ->where('is_read', false)
-                ->update(['is_read' => true]);
+       
         } catch (\Exception $e) {
             Log::error('Ошибка при пометке сообщений как прочитанных: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
@@ -128,17 +93,11 @@ class SupportController extends Controller
                 'message' => 'required|string|max:1000',
             ]);
 
-            $message = Message::create([
-                'sender_id' => Auth::id(),
-                'receiver_id' => 55, // ID поддержки
-                'message' => $validated['message'],
-                'message_type' => 'text',
-                'is_read' => false
-            ]);
+       
 
             return response()->json([
                 'success' => true,
-                'message' => new MessageResource($message)
+             
             ]);
         } catch (\Exception $e) {
             Log::error('Ошибка отправки сообщения: ' . $e->getMessage());

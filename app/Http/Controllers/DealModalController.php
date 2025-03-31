@@ -3,9 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Deal;
-use App\Models\Chat;
 use App\Models\DealFeed;
 use App\Models\User;
+use App\Models\ChatGroup;
 use Illuminate\Support\Facades\Log;
 
 class DealModalController extends Controller
@@ -13,9 +13,6 @@ class DealModalController extends Controller
     /**
      * Отображение модального окна для сделки.
      */
-  
-
-    // Добавим алиас для метода getDealModal, который используется в маршрутах
     public function getDealModal($id)
     {
         try {
@@ -25,30 +22,17 @@ class DealModalController extends Controller
                 ->orderBy('created_at', 'desc')
                 ->get();
 
-            $groupChat = Chat::where('deal_id', $id)
-                ->where('type', 'group')
-                ->first();
-
-            // Если групповой чат не найден – создаём его
-            if (!$groupChat) {
-                $responsibleIds = $deal->users->pluck('id')->toArray();
-                if (!in_array($deal->user_id, $responsibleIds)) {
-                    $responsibleIds[] = $deal->user_id;
-                }
-                $groupChat = Chat::create([
-                    'name'    => "Групповой чат сделки: {$deal->name}",
-                    'type'    => 'group',
-                    'deal_id' => $deal->id,
-                    'slug'    => (string) Str::uuid(),
-                ]);
-                $groupChat->users()->attach($responsibleIds);
+            // Получаем групповой чат для сделки, если он существует
+            $groupChat = null;
+            if ($deal->chat_group_id) {
+                $groupChat = ChatGroup::find($deal->chat_group_id);
             }
-
+    
             // Формирование полей сделки (пример для модуля "Заказ")
             $dealFields = $this->getDealFields();
 
             return response()->json([
-                'html' => view('deals.partials.dealModal', compact('deal', 'feeds', 'groupChat', 'dealFields'))->render()
+                'html' => view('deals.partials.dealModal', compact('deal', 'feeds', 'dealFields', 'groupChat'))->render()
             ]);
         } catch (\Exception $e) {
             Log::error("Ошибка отображения модального окна сделки: " . $e->getMessage(), ['exception' => $e]);
@@ -159,7 +143,7 @@ class DealModalController extends Controller
                 ],
                 [
                     'name' => 'client_city',
-                    'label' => 'Город/Часовой пояс',
+                    'label' => 'Город',
                     'type' => 'select',
                     'role' => ['coordinator', 'admin'],
                     'options' => [], // Заполняется через AJAX

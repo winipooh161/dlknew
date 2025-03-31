@@ -47,9 +47,30 @@
             font-size: 18px;
             color: #3498db;
         }
+        
+        .logo {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .logo img {
+            max-width: 150px;
+            height: auto;
+        }
+        
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
+    <div class="logo">
+        <img src="{{ storage_path('app/public/icon/fool_logo.svg') }}" alt="Логотип">
+    </div>
+    
     <h1>Общий бриф #{{ $brif->id }}</h1>
     
     <table>

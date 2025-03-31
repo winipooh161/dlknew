@@ -15,8 +15,13 @@
                 <button type="button" class="btn btn-secondary" onclick="goToPrev()">Обратно</button>
             @endif
             <button type="button" class="btn btn-primary" onclick="validateAndSubmit()">Далее</button>
-            @if ($page > 0 && $page < $totalPages)
+            
+            @if ($page > 0 && $page < 15)
                 <button type="button" class="btn btn-warning" onclick="skipPage()">Пропустить</button>
+            @endif
+            
+            @if ($page >= 15 && !empty(json_decode($brif->skipped_pages ?? '[]')))
+                <span class="skipped-notice">Вы заполняете пропущенные страницы</span>
             @endif
         </div>
     </div>
@@ -63,6 +68,20 @@
                     </div>
                 </div>
             @endforeach
+        </div>
+        
+        <div class="form__button flex between">
+            @if($page > 0)
+                <button type="button" onclick="window.location.href='{{ route('common.questions', ['id' => $brif->id, 'page' => $page - 1]) }}'">Назад</button>
+            @else
+                <button type="button" onclick="window.location.href='{{ route('brifs.index') }}'">Отмена</button>
+            @endif
+            
+            <button type="submit">Далее</button>
+            
+            @if($page < 15)
+                <button type="button" class="skip-button" onclick="skipPage()">Пропустить</button>
+            @endif
         </div>
     @endif
 
@@ -341,9 +360,41 @@
     
     // Функция для пропуска текущей страницы
     function skipPage() {
-        document.getElementById('actionInput').value = 'next';
-        document.getElementById('skipPageInput').value = '1';
-        document.getElementById('briefForm').submit();
+        // Проверяем, что страница < 15, так как страницы 15+ нельзя пропускать
+        @if ($page < 15)
+            // Создаем форму CSRF-токена для отправки
+            const csrfToken = '{{ csrf_token() }}';
+            
+            // Отправляем запрос на пропуск текущей страницы
+            fetch('{{ route('common.skipPage', ['id' => $brif->id, 'page' => $page]) }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                credentials: 'same-origin' // Важно для работы с сессиями и куками
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Ошибка сервера: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    window.location.href = data.redirect;
+                } else {
+                    alert(data.message || 'Произошла ошибка при пропуске страницы');
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+                alert('Произошла ошибка при пропуске страницы. Пожалуйста, попробуйте еще раз.');
+            });
+        @else
+            alert('Эту страницу нельзя пропустить.');
+        @endif
     }
     
     // Функция для перехода на предыдущую страницу
@@ -421,3 +472,15 @@
         }
     });
 </script>
+
+<style>
+    .skipped-notice {
+        color: #ff6600;
+        font-weight: bold;
+        font-size: 14px;
+        padding: 5px 10px;
+        background-color: #fff3e0;
+        border-radius: 4px;
+        border: 1px solid #ff9800;
+    }
+</style>

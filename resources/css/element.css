@@ -260,14 +260,6 @@ body {
     min-height: 23px !important;
 }
 
-.chat-container,
-.chats-container {
-    width: 100%;
-    z-index: 90;
-    position: relative;
-    border-radius: var(--radius);
-}
-
 .chat-messages {
     /* border: 1px solid rgb(204, 204, 204); */
     border-radius: 0;
@@ -860,39 +852,6 @@ div#modal3 .modal-content .brifs__button__create.flex {
     background: var(--blue);
 }
 
-.emoji-picker-container {
-    position: relative;
-    display: inline-block;
-}
-
-.emoji-picker {
-    left: 0;
-    -ms-flex-wrap: wrap;
-    flex-wrap: wrap;
-    gap: 5px;
-    display: none;
-    position: absolute;
-    bottom: 50px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    -webkit-box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    max-height: 150px;
-    overflow-y: auto;
-    z-index: 1000;
-    padding: 10px;
-    background: #fff;
-}
-
-.emoji {
-    font-size: 1.5rem;
-    cursor: pointer;
-}
-
-.emoji:hover {
-    border-radius: 4px;
-    background: rgb(240, 240, 240);
-}
 
 .file-preview-container {
     margin-top: 10px;
@@ -924,7 +883,7 @@ div#file-preview-container {
     display: flex;
     -ms-flex-wrap: wrap;
     flex-wrap: wrap;
-    top: -139px;
+    top: -97px;
     position: absolute;
     gap: var(--g10);
     width: 100%;
@@ -945,11 +904,6 @@ div#file-preview-container img {
     width: 100%;
 }
 
-button#emoji-picker-button {
-    border: 1px solid rgb(0, 0, 0);
-    font-size: 24px;
-    padding: 0 !important;
-}
 
 .file-preview-item {
     position: relative;
@@ -991,17 +945,7 @@ button.remove-button {
     padding: 0 !important;
 }
 
-.emoji-button {
-    margin-left: 10px;
-    cursor: pointer;
-    font-size: 24px;
-}
 
-.emoji-item {
-    cursor: pointer;
-    font-size: 20px;
-    margin: 5px;
-}
 
 .my-message span {
     text-align: left;
@@ -1066,48 +1010,11 @@ button.remove-button {
     letter-spacing: 0%;
 }
 
-.emoji-button {
-    margin-left: 8px;
-    cursor: pointer;
-    border: none;
-    background: none;
-    font-size: 20px;
-}
-.emoji-picker {
-    position: absolute;
-    bottom: 50px;
-    left: 0;
-    background: #fff;
-    border: 1px solid #ddd;
-    min-width: 280px;
-    -ms-flex-wrap: wrap;
-        flex-wrap: wrap;
-    gap: 5px;
-    padding: 5px;
-}
-.emoji-picker .emoji-item {
-    display: inline-block;
-    font-size: 20px;
-    cursor: pointer;
-    margin: 3px;
-}
 
 
-.chat-container {
-    display: -webkit-box;
-    display: -ms-flexbox;
-    display: flex;
-    gap: 20px;
-    padding: var(--p20);
-    max-width: 100%;
-    height: 100%;
-    border-radius: var(--radius);
-    background: var(
-    --fff);
-}
 .user-list {
     width: 350px;
-    padding: var(--p20);
+    padding: var(--p10);
     max-height: 100%;
 }
 .user-list__avatar img {
@@ -1126,22 +1033,22 @@ button.remove-button {
 }
 .chat-header {
     font-weight: bold;
-        display: -webkit-box;
-        display: -ms-flexbox;
-        display: flex;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
     min-height: 66px;
     background: var(--fff);
     -webkit-box-pack: justify;
-        -ms-flex-pack: justify;
-            justify-content: space-between;
-    margin: var(--m20) var(--m20) 0 var(--m20) !important;
+    -ms-flex-pack: justify;
+    justify-content: space-between;
+    /* margin: var(--m20) var(--m20) 0 var(--m20) !important; */
     border-radius: var(
     --radius);
     -ms-flex-line-pack: center;
-        align-content: center;
+    align-content: center;
     -webkit-box-align: center;
-        -ms-flex-align: center;
-            align-items: center;
+    -ms-flex-align: center;
+    align-items: center;
     font-family: Onest;
     font-weight: 400;
     font-size: 18px;
@@ -1180,7 +1087,7 @@ button.remove-button {
 .message-time {
     display: block;
     font-size: 0.85em;
-    color: #999;
+    color: #ffffff;
     margin-top: 4px;
 }
 .chat-input {
@@ -1354,4 +1261,44 @@ button.remove-button {
     top: 8px;
     color: #666;
     font-size: 0.8em;
+}
+
+.chat-tabs {
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 10px;
+}.message-received .message-time.text-end {
+    color: #000;
+}
+
+/* Стили для элементов с новыми сообщениями */
+.contact-item.new-message {
+    background-color: rgba(0, 123, 255, 0.1);
+    animation: newMessagePulse 2s infinite;
+}
+
+@keyframes newMessagePulse {
+    0% { background-color: rgba(0, 123, 255, 0.1); }
+    50% { background-color: rgba(0, 123, 255, 0.2); }
+    100% { background-color: rgba(0, 123, 255, 0.1); }
+}
+
+.unread-badge {
+    background-color: #ff4136;
+    color: white;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 0.7rem;
+    min-width: 20px;
+    text-align: center;
+}
+
+/* Стили для уведомления о новом сообщении */
+#chat-notification {
+    cursor: pointer;
+    transition: transform 0.3s, opacity 0.3s;
+}
+
+#chat-notification:hover {
+    transform: translateY(-5px);
+    opacity: 0.9;
 }

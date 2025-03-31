@@ -244,28 +244,8 @@ width: 100%;
     margin-right: 10px;
 }
 
-.emoji-picker {
-    display: none;
-    position: absolute;
-    bottom: 50px;
-    background: #fff;
-    border: 1px solid #ccc;
-    padding: 10px;
-    border-radius: 5px;
-    max-width: 200px;
-    overflow-y: auto;
-    max-height: 150px;
-}
 
-.emoji-item {
-    cursor: pointer;
-    margin: 5px;
-    font-size: 1.2em;
-}
 
-.emoji-item:hover {
-    background-color: #f0f0f0;
-}
     .chat-messages li  {
         min-width: 90%;
     }
@@ -356,6 +336,18 @@ width: 100%;
 }
 
 @media only screen and (max-width: 768px) {
+    .show-contacts-btn {
+        display: flex !important;
+        z-index: 9999;
+        background: none;
+        min-width: 50px  !important;
+        max-width: 50px !important;
+        min-height: 50px !important;
+        max-height: 50px !important;
+        box-shadow: none !important;
+        border: none !important;
+        background: none !important;
+    }
     .support .faq_item {
         width: 100%;
     }
@@ -363,7 +355,7 @@ width: 100%;
         padding: var(--p10);
     }
     .main__flex {
-        padding-bottom: 100px;
+        /* padding-bottom: 100px; */
     }
     .form-group-deal {
         margin-bottom: 0px;
@@ -407,17 +399,7 @@ width: 100%;
     .user-list {
         padding: 20px;
     }
-    .chat-container {
-        display: -webkit-box;
-        display: -ms-flexbox;
-        display: flex
-;
-        -webkit-box-orient: vertical;
-        -webkit-box-direction: normal;
-            -ms-flex-direction: column;
-                flex-direction: column;
-        padding-bottom: 70px;
-    }
+  
     .chat-messages {
         min-height: max-content;
         max-height: 523px;
@@ -998,6 +980,7 @@ align-content: center;
     }
     .mb.mobile__ponel ul {
         padding: var(--p10);
+        margin: 0;
     }
     .div__create_block h1 .Jikharev {
         padding: 0px;
@@ -1229,12 +1212,7 @@ align-items: flex-start;
     fieldset.module__deal-deal {
         padding: var(--p20) !important;
     }
-    .chat-input button.emoji-button {
-        left: 46px;
-        height: 40px !important;
-        max-height: 40px;
-        min-height: 40px !important;
-    }
+ 
     .chat-input {
         padding: 0;
         position: fixed !important;
@@ -1338,10 +1316,68 @@ position: relative;
         padding: 0 0 50px 0;
     }
     .chat-block { 
-        display: none; /* скрываем inline чат */
+        display: none; /* ÑÐºÑ€Ñ‹Ð²Ð°ÐµÐ¼ inline Ñ‡Ð°Ñ‚ */
     }
     .btn-open-chat {
         display: block !important;
      
+    }
+}
+
+@media (max-width: 767.98px) {
+    .messages-box {
+
+        padding: 100px 2px 20px 2px;
+
+      
+    }
+    button#emoji-button {
+        left: 10px;
+        top: 4px;
+    }
+    
+    button#attachment-button {
+        left: 45px;
+        top: 4px;
+    }
+    
+    button#emoji-button {}
+    
+    button#send-button {
+        right: 0;
+        top: 5px;
+    }
+    form#message-form button {
+        z-index: 1000;
+        width: 15%;
+        position: absolute;
+        font-size: 28px;
+        min-height: 50px !important;
+    }
+    form#message-form input {
+        width: 100%;
+        padding: 12px 40px 12px 80px;
+    }
+    .chat-input-area {
+        position: fixed;
+        z-index: 999989;
+        padding: 0;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+    }
+    .contacts-list {
+        position: fixed;
+        z-index: 99999999999999;
+        top: 0;
+        left: -100%;
+        width: 80%;
+        height: 100%;
+        background: #fff;
+        transition: left 0.3s ease;
+        z-index: 999999;
+    }
+    .contacts-list.active {
+        left: 0;
     }
 }

@@ -42,7 +42,6 @@ class Deal extends Model
         'client_timezone',
         'office_partner_id',
         'client_account_link',
-        'chat_link',
         'measurement_comments',
         'measurements_file',
         'brief',
@@ -69,7 +68,6 @@ class Deal extends Model
         'visualizer_rating_coordinator',
         'coordinator_rating_client',
         'coordinator_rating_partner',
-        'chat_screenshot',
         'coordinator_comment',
         'archicad_file',
         'contract_number',
@@ -88,16 +86,12 @@ class Deal extends Model
         'rooms_count',
         'deal_end_date',
         'payment_date',
+        'chat_group_id', // Добавляем поле chat_group_id
     ];
 
     public function user()
     {
         return $this->belongsTo(User::class);
-    }
-
-    public function chat()
-    {
-        return $this->hasOne(Chat::class);
     }
 
     public function coordinator()
@@ -158,5 +152,13 @@ class Deal extends Model
     public function changeLogs()
     {
         return $this->hasMany(DealChangeLog::class);
+    }
+
+    /**
+     * Связь с групповым чатом
+     */
+    public function chatGroup()
+    {
+        return $this->belongsTo(ChatGroup::class, 'chat_group_id');
     }
 }

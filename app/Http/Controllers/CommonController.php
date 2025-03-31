@@ -439,8 +439,10 @@ class CommonController extends Controller
             $brif->price = $data['price'];
         }
     
-        // Проверяем, пропущена ли страница
-        $isSkipped = (bool)$request->input('skip_page', 0);
+        // Определяем, пропущена ли страница, с учётом кнопки "skip"
+        $isSkipped = $request->input('action') === 'skip'
+            ? true
+            : (bool)$request->input('skip_page', 0);
         
         // Если страница не пропущена, сохраняем ответы
         if (!$isSkipped) {
@@ -460,11 +462,13 @@ class CommonController extends Controller
                 $brif->skipped_pages = json_encode(array_values($skippedPages));
             }
         } else {
-            // Если страница пропущена, добавляем ее в массив пропущенных
-            $skippedPages = json_decode($brif->skipped_pages ?? '[]', true);
-            if (!in_array($page, $skippedPages)) {
-                $skippedPages[] = $page;
-                $brif->skipped_pages = json_encode($skippedPages);
+            // Если страница пропущена, добавляем ее в массив пропущенных (только если страница < 15)
+            if ($page < 15) {
+                $skippedPages = json_decode($brif->skipped_pages ?? '[]', true);
+                if (!in_array($page, $skippedPages)) {
+                    $skippedPages[] = $page;
+                    $brif->skipped_pages = json_encode($skippedPages);
+                }
             }
         }
         
@@ -511,70 +515,176 @@ class CommonController extends Controller
             $brif->save();
             return redirect()->route('common.questions', ['id' => $brif->id, 'page' => $prevPage]);
         }
-    
-        // Массив для определения, есть ли следующая страница
-        $questionsMapping = [
-            1  => ['question_1_1', 'question_1_2'],
-            2  => ['question_2_1', 'question_2_2'],
-            3  => ['question_3_1', 'question_3_2'],
-            4  => ['question_4_1', 'question_4_2'],
-            5  => ['question_5_1', 'question_5_2'],
-            6  => ['question_6_1', 'question_6_2'],
-            7  => ['question_7_1', 'question_7_2'],
-            8  => ['question_8_1', 'question_8_2'],
-            9  => ['question_9_1', 'question_9_2'],
-            10 => ['question_10_1', 'question_10_2'],
-            11 => ['question_11_1', 'question_11_2'],
-            12 => ['question_12_1', 'question_12_2'],
-            13 => ['question_13_1', 'question_13_2'],
-            14 => ['question_14_1', 'question_14_2'],
-            15 => ['question_15_1', 'question_15_2'],
-        ];
-    
-        $nextPage = $page + 1;
-        // Если следующей страницы нет — завершаем заполнение брифа
-        if (!isset($questionsMapping[$nextPage])) {
-            $skippedPages = json_decode($brif->skipped_pages ?? '[]', true);
-            
-            // Если есть пропущенные страницы, перенаправляем на первую из них
-            if (!empty($skippedPages)) {
-                $nextPage = min($skippedPages);
+        
+        // Если нажата кнопка "Пропустить", перенаправляем на следующую страницу
+        if ($request->input('action') === 'skip') {
+            $maxPage = 15; // Максимальная страница
+            if ($page < $maxPage) {
+                $nextPage = $page + 1;
                 $brif->current_page = $nextPage;
                 $brif->save();
+                return redirect()->route('common.questions', ['id' => $brif->id, 'page' => $nextPage]);
+            }
+        }
+        
+        // Сохраняем текущую страницу в брифе
+        $brif->current_page = $page;
+        $brif->save();
+        
+        // Получаем список пропущенных страниц
+        $skippedPages = json_decode($brif->skipped_pages ?? '[]', true);
+        
+        // Проверяем, была ли текущая страница в списке пропущенных
+        $wasInSkippedList = in_array($page, $skippedPages);
+        
+        // Если текущая страница была пропущена ранее, удаляем её из списка
+        if ($wasInSkippedList) {
+            $skippedPages = array_diff($skippedPages, [$page]);
+            $brif->skipped_pages = json_encode(array_values($skippedPages));
+            $brif->save();
+        }
+        
+        // Если список пропущенных страниц пуст (то есть все страницы заполнены)
+        if (empty($skippedPages)) {
+            // Если это была пропущенная страница ИЛИ страница 15, завершаем бриф
+            if ($wasInSkippedList || $page == 15) {
+                // Завершаем бриф
+                $brif->status = 'Завершенный';
+                $brif->save();
+                
+                // Связываем с сделкой, если она существует
+                $deal = Deal::where('user_id', auth()->id())->first();
+                if ($deal) {
+                    $brif->deal_id = $deal->id;
+                    $brif->save();
+                    
+                    $deal->common_id = $brif->id;
+                    $deal->update([
+                        'client_name'   => auth()->user()->name,
+                        'client_phone'  => auth()->user()->phone ?? 'N/A',
+                        'total_sum'     => $brif->price ?? 0,
+                        'status'        => 'Бриф прикриплен',
+                        'link'          => "/common/{$brif->id}",
+                    ]);
+                }
+                
+                return redirect()->route('deal.user')
+                    ->with('success', 'Бриф успешно заполнен!');
+            }
+        }
+        
+        // Если остались ещё пропущенные страницы, переходим к следующей пропущенной
+        if (!empty($skippedPages)) {
+            sort($skippedPages); // Сортируем по возрастанию
+            $nextPage = $skippedPages[0];
+            return redirect()->route('common.questions', ['id' => $brif->id, 'page' => $nextPage])
+                ->with('warning', 'У вас остались пропущенные вопросы. Пожалуйста, заполните их.');
+        }
+        
+        // Если это обычная страница (не пропущенная и не страница 15)
+        if ($page < 15) {
+            // Просто переходим к следующей странице
+            $nextPage = $page + 1;
+            return redirect()->route('common.questions', ['id' => $brif->id, 'page' => $nextPage]);
+        } else if ($page == 15) {
+            // Если страница 15, проверяем наличие пропущенных страниц
+            if (!empty($skippedPages)) {
+                sort($skippedPages);
+                $nextPage = $skippedPages[0];
                 return redirect()->route('common.questions', ['id' => $brif->id, 'page' => $nextPage])
                     ->with('warning', 'У вас остались пропущенные вопросы. Пожалуйста, заполните их.');
-            }
-            
-            // Если пропущенных страниц нет - завершаем бриф
-            $brif->status = 'Завершенный';
-            $brif->save();
-    
-            // Поиск (или создание) сделки и привязка к брифу
-            $deal = Deal::where('user_id', auth()->id())->first();
-            if ($deal) {
-                $brif->deal_id = $deal->id;
+            } else {
+                // Если нет пропущенных страниц, завершаем бриф
+                $brif->status = 'Завершенный';
                 $brif->save();
-    
-                $deal->common_id = $brif->id;
-                $deal->update([
-                    'client_name'   => auth()->user()->name,
-                    'client_phone'  => auth()->user()->phone ?? 'N/A',
-                    'total_sum'     => $brif->price ?? 0,
-                    'status'        => 'Бриф прикриплен',
-                    'link'          => "/common/{$brif->id}",
-                ]);
+                
+                // Связываем с сделкой
+                $deal = Deal::where('user_id', auth()->id())->first();
+                if ($deal) {
+                    $brif->deal_id = $deal->id;
+                    $brif->save();
+                    
+                    $deal->common_id = $brif->id;
+                    $deal->update([
+                        'client_name'   => auth()->user()->name,
+                        'client_phone'  => auth()->user()->phone ?? 'N/A',
+                        'total_sum'     => $brif->price ?? 0,
+                        'status'        => 'Бриф прикриплен',
+                        'link'          => "/common/{$brif->id}",
+                    ]);
+                }
+                
+                return redirect()->route('deal.user')
+                    ->with('success', 'Бриф успешно заполнен!');
             }
-            // Изменено: редирект на страницу сделки
-            return redirect()->route('deal.user')
-                ->with('success', 'Бриф успешно заполнен!');
         }
-    
-        // Иначе — сохраняем номер следующей страницы и перенаправляем пользователя туда
-        $brif->current_page = $nextPage;
-        $brif->save();
-    
-        return redirect()->route('common.questions', ['id' => $brif->id, 'page' => $nextPage]);
+        
+        // Если достигнут конец всех страниц (что маловероятно, но для защиты)
+        return redirect()->route('brifs.index')
+            ->with('success', 'Все вопросы заполнены.');
     }
     
+    /**
+     * Пропустить текущую страницу брифа.
+     *
+     * @param  int  $id    ID брифа
+     * @param  int  $page  Номер страницы
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function skipPage($id, $page)
+    {
+        try {
+            // Находим бриф по ID и текущему пользователю
+            $brif = Common::where('id', $id)
+                ->where('user_id', auth()->id())
+                ->first();
+
+            if (!$brif) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Бриф не найден или не принадлежит текущему пользователю.',
+                ], 404);
+            }
+            
+            // Пропускаем только если страница меньше 15
+            if ((int)$page < 15) {
+                // Получаем текущий список пропущенных страниц
+                $skippedPages = json_decode($brif->skipped_pages ?? '[]', true);
     
+                // Добавляем текущую страницу в список пропущенных, если её ещё нет
+                if (!in_array((int)$page, $skippedPages)) {
+                    $skippedPages[] = (int)$page;
+                    $brif->skipped_pages = json_encode($skippedPages);
+                }
+    
+                // Определяем следующую страницу
+                $nextPage = (int)$page + 1;
+    
+                // Обновляем текущую страницу в брифе
+                $brif->current_page = $nextPage;
+                $brif->save();
+    
+                return response()->json([
+                    'success' => true,
+                    'redirect' => route('common.questions', ['id' => $brif->id, 'page' => $nextPage]),
+                    'message' => 'Страница успешно пропущена.'
+                ]);
+            } else {
+                // Страницу 15 и выше нельзя пропустить
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Эту страницу нельзя пропустить.'
+                ], 400);
+            }
+        } catch (\Exception $e) {
+            // Логируем ошибку для отладки
+            \Illuminate\Support\Facades\Log::error('Ошибка пропуска страницы: ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error($e->getTraceAsString());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Произошла ошибка при пропуске страницы: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

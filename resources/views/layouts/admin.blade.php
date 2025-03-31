@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title_site }}</title>
-    @vite([ 'resources/css/style.css', 'resources/css/font.css', 'resources/css/element.css', 'resources/css/animation.css', 'resources/css/mobile.css', 'resources/js/bootstrap.js', 'resources/js/modal.js', 'resources/js/success.js','resources/js/bootstrap.js','resources/js/mask.js', 'resources/js/login.js', 'resources/js/notification.js','resources/js/chat.js',   
+    @vite([ 'resources/css/style.css', 'resources/css/font.css', 'resources/css/element.css', 'resources/css/animation.css', 'resources/css/mobile.css', 'resources/js/bootstrap.js', 'resources/js/modal.js', 'resources/js/success.js','resources/js/bootstrap.js','resources/js/mask.js', 'resources/js/login.js',   
 
     'resources/js/message-actions.js',
     'resources/js/emoji-picker.js',
@@ -70,7 +70,20 @@
   
       <div id="loading-screen" class="wow fadeInleft" data-wow-duration="1s" data-wow-delay="1s"">
         <img src="/storage/icon/fool_logo.svg" alt="Loading">
-    </div>
+    </div> <script>
+        window.addEventListener('load', () => {
+    const loadingScreen = document.getElementById('loading-screen');
+    const content = document.getElementById('content');
+    setTimeout(() => {
+        loadingScreen.classList.add('hidden'); // Применяем класс для анимации исчезновения
+        document.body.style.overflow = 'auto'; // Включаем прокрутку
+        setTimeout(() => {
+            loadingScreen.style.display = 'none'; // Полностью убираем загрузку после анимации
+            content.style.opacity = '1'; // Плавно показываем содержимое (контент уже анимируется в CSS)
+        }, 1000); // Длительность анимации исчезновения (совпадает с fadeOut)
+    }, 1000); // Задержка до начала исчезновения
+});
+    </script>
     @if (session('success'))
         <div id="success-message" class="success-message">
             {{ session('success') }}

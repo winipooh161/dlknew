@@ -32,23 +32,29 @@ class Kernel extends HttpKernel
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            \App\Http\Middleware\UpdateUserLastSeen::class, // Добавляем обновление статуса пользователя
         ],
         'api' => [
-            // \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
+            \App\Http\Middleware\EncryptCookies::class,
+            \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
+            \Illuminate\Session\Middleware\StartSession::class, // Включаем поддержку сессий для API
+            \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
             \Illuminate\Routing\Middleware\ThrottleRequests::class.':api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ],
     ];
     /**
-     * The application's middleware aliases.
+     * The application's route middleware.
      *
-     * Aliases may be used to conveniently assign middleware to routes and groups.
+     * These middleware may be assigned to groups or used individually.
      *
-     * @var array<string, class-string|string>
+     * @var array
      */
     protected $routeMiddleware = [
         'auth' => \Illuminate\Auth\Middleware\Authenticate::class,
         'status' => \App\Http\Middleware\CheckUserStatus::class,
+        'check.chat.access' => \App\Http\Middleware\CheckChatAccess::class,
+        'update.last.seen' => \App\Http\Middleware\UpdateUserLastSeen::class,
     ];
     
     

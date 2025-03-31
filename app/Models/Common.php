@@ -7,7 +7,7 @@ class Common extends Model
     use HasFactory;
 
     protected $fillable = [
-        'id', 'title', 'article', 'description', 'status', 'price', 'current_page', 'user_id', 'deal_id',
+        'title', 'description', 'status', 'article', 'user_id', 'deal_id', 'answers', 'current_page', 'skipped_pages'
     ]; 
 
     // Связь с координатором

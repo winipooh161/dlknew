@@ -1,4 +1,1 @@
-// Firebase Messaging Service Worker функциональность отключена.
-self.addEventListener('install', function(event) {
-    console.log('Firebase Messaging SW отключён');
-});
+// Firebase Service Worker удалён – код удалён

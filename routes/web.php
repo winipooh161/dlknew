@@ -12,10 +12,9 @@ use App\Http\Controllers\DealModalController;
 use App\Http\Controllers\SupportController;
 use App\Http\Controllers\SmetsController;
 use App\Http\Controllers\DealsController;
-use App\Http\Controllers\ChatController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\ChatController;
 // Используемые контроллеры Firebase удалены
-// use App\Http\Controllers\FcmController;
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\URL;
@@ -38,16 +37,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/support', [SupportController::class, 'index'])->name('support.index');
     Route::post('/support/reply/{ticket}', [SupportController::class, 'reply'])->name('support.reply');
     Route::post('/support/create', [SupportController::class, 'create'])->name('support.create');
-
-    Route::middleware(['status:support'])->group(function () {
-        Route::get('/support/chats', [SupportController::class, 'chats'])->name('support.chats');
-        Route::get('/support/chat/{id}', [SupportController::class, 'chat'])->name('support.chat');
-        Route::post('/support/chat/{id}/reply', [SupportController::class, 'reply'])->name('support.chat.reply');
-    });
-
-    // Добавляем маршрут для отправки сообщений в поддержку
-    Route::post('/support/send-message/{id}', [SupportController::class, 'sendMessage'])
-        ->name('support.sendMessage');
 
     // Профиль
     Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
@@ -75,7 +64,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/commercial/{id}', [BrifsController::class, 'commercial_show'])->name('commercial.show');
     Route::get('/commercial/{id}/download-pdf', [BrifsController::class, 'commercial_download_pdf'])->name('commercial.download.pdf');
 
-    Route::get('/deal/{deal}/chat', [DealsController::class, 'showDealChat'])->name('deal.chat');
     // Сделка для пользователя
     Route::get('/deal-user', [DealsController::class, 'dealUser'])->name('deal.user');
 });
@@ -128,53 +116,6 @@ Route::get('/refresh-csrf', function() {
     return response()->json(['token' => csrf_token()]);
 })->name('refresh-csrf');
 
-
-
-// Маршруты для создания групповых чатов – доступны для координаторов и администраторов
-Route::middleware(['auth', 'status:coordinator,admin'])->group(function () {
-    Route::get('/chats/group/create', [ChatController::class, 'createGroupChatForm'])->name('chats.group.create');
-    Route::post('/chats/group/create', [ChatController::class, 'storeGroupChat'])->name('chats.group.store');
-});
-Route::middleware(['auth'])->group(function () {
-    Route::get('/deals/user', [DealsController::class, 'dealUser'])->name('deal.user');
-    Route::get('/chats/{chatType}/{chatId}/messages', [ChatController::class, 'chatMessages'])->name('chats.messages');
-    Route::post('/chats/{chatType}/{chatId}/messages', [ChatController::class, 'sendMessage'])->name('chats.sendMessage');
-    Route::post('/chats/{type}/{id}/new-messages', [ChatController::class, 'getNewMessages']);
-    Route::post('/support/chat/{id}/new-messages', [SupportController::class, 'getNewMessages'])->name('support.chat.newMessages');
-    Route::post('/support/chat/{id}/mark-read', [SupportController::class, 'markMessagesAsRead'])->name('support.chat.markMessagesAsRead');
-    Route::get('/support', [SupportController::class, 'index'])->name('support');
-   
-    // Удаляем маршруты для Firebase
-    // Route::post('/firebase/send-notification', [ProfileController::class, 'sendFirebaseNotification'])->name('firebase.sendNotification');
-    Route::get('/chats/unread-counts', [ChatController::class, 'getUnreadCounts'])->name('chats.unreadCounts');
-    Route::get('/chats/{type}/{id}/new-messages', [ChatController::class, 'getNewMessages'])->name('chats.new-messages');
-});
-
-// Общие маршруты для чатов (личные и групповые)
-Route::middleware(['auth'])->group(function () {
-    Route::get('/chats', [ChatController::class, 'index'])->name('chats.index');
-
-    Route::prefix('/chats/{chatType}/{chatId}')->group(function () {
-        Route::get('/messages', [ChatController::class, 'chatMessages'])->name('chats.messages');
-        Route::post('/messages', [ChatController::class, 'sendMessage'])->name('chats.sendMessage');
-        Route::post('/new-messages', [ChatController::class, 'getNewMessages'])->name('chats.newMessages');
-        Route::post('/mark-read', [ChatController::class, 'markMessagesAsRead'])->name('chats.markMessagesAsRead');
-        Route::delete('/messages/{messageId}', [ChatController::class, 'deleteMessage'])->name('chats.deleteMessage');
-        Route::post('/messages/{messageId}/pin', [ChatController::class, 'pinMessage'])->name('chats.pinMessage');
-        Route::post('/messages/{messageId}/unpin', [ChatController::class, 'unpinMessage'])->name('chats.unpinMessage');
-        Route::post('/mark-delivered', [ChatController::class, 'markMessagesDelivered'])->name('chats.markDelivered');
-        Route::post('/typing', [ChatController::class, 'typingIndicator'])->name('chats.typing');
-    });
-
-    Route::post('/chats/search', [ChatController::class, 'search'])->name('chats.search');
-});
-
-// Маршруты для FCM
-// Route::middleware(['auth'])->group(function () {
-//     Route::post('/fcm/update-token', [FcmController::class, 'updateToken'])->name('fcm.update-token');
-//     Route::post('/api/fcm/update-token', [FcmController::class, 'updateToken'])->name('fcm.update-token.api'); // Добавляем API маршрут
-// });
-
 Route::middleware(['auth', 'status:admin'])->group(function () {
     Route::get('/admin', [AdminController::class, 'index'])->name('admin');
     Route::get('/admin/users', [AdminController::class, 'user_admin'])->name('admin.users');
@@ -204,8 +145,6 @@ if (app()->environment('production')) {
     URL::forceScheme('https');
 }
 
-Route::get('/deal/{dealId}/feeds', [DealsController::class, 'getDealFeeds'])->name('deal.feeds');
-
 // Если URL без id, перенаправляем на карточку сделок
 Route::get('/deal/update', function () {
     return redirect()->route('deal.cardinator');
@@ -217,6 +156,165 @@ Route::post('/deal/update/{id}', [DealsController::class, 'updateDeal'])
 
 // Маршрут для отображения модального окна сделки
 
-    Route::post('/chats/{chat}/messages/{message}/pin', [ChatController::class, 'pinMessage']);
-    // Получение новых сообщений (для автообновления)
-    Route::post('/chats/{chatType}/{chatId}/new-messages', [ChatController::class, 'getNewMessages'])->name('chats.new-messages');
+// Маршруты для чатов
+Route::middleware('auth')->prefix('api')->group(function () {
+    // Получить список контактов
+    Route::get('/contacts', function () {
+        $user = auth()->user();
+        $contacts = \App\Models\User::where('id', '!=', $user->id)->get()->map(function ($contact) {
+            return [
+                'id' => $contact->id,
+                'name' => $contact->name,
+                'avatar' => $contact->avatar_url,
+                'status' => rand(0, 1) ? 'online' : 'offline', // Демо-данные
+                'lastMessage' => 'Сообщений пока нет',
+                'unreadCount' => rand(0, 5), // Демо-данные
+                'lastActivity' => 'Недавно',
+            ];
+        });
+        return response()->json($contacts);
+    });
+
+    // Получить сообщения чата
+    Route::get('/chats/{id}/messages', function ($id) {
+        // Здесь будет логика получения сообщений
+        return response()->json(['messages' => []]);
+    });
+
+    // Отправить сообщение
+    Route::post('/chats/{id}/messages', function (Request $request, $id) {
+        // Здесь будет логика сохранения сообщения
+        return response()->json(['status' => 'success']);
+    });
+
+    // Получить количество непрочитанных сообщений
+    Route::get('/messages/unread-count', function () {
+        $user = auth()->user();
+        $count = $user->unreadMessagesCount();
+        return response()->json(['count' => $count]);
+    });
+});
+
+// Маршрут для пропуска страницы в брифе
+Route::middleware(['auth'])->group(function () {
+    Route::post('/common/brifs/{id}/skip/{page}', [App\Http\Controllers\CommonController::class, 'skipPage'])->name('common.skipPage');
+    
+    // Маршруты для чатов
+    Route::get('/chats', [\App\Http\Controllers\ChatController::class, 'index'])->name('chats.index');
+});
+
+// Маршруты API для чатов
+Route::middleware('auth')->prefix('api')->group(function () {
+    // Получить список контактов
+    Route::get('/contacts', [\App\Http\Controllers\ChatController::class, 'getContacts']);
+
+    // Получить сообщения чата
+    Route::get('/chats/{id}/messages', [\App\Http\Controllers\ChatController::class, 'getMessages']);
+    
+    // Получить новые сообщения после указанного ID
+    Route::get('/chats/{id}/new-messages', [\App\Http\Controllers\ChatController::class, 'getNewMessages']);
+
+    // Отправить сообщение
+    Route::post('/chats/{id}/messages', [\App\Http\Controllers\ChatController::class, 'sendMessage']);
+    
+    // Получить количество непрочитанных сообщений
+    Route::get('/messages/unread-count', [\App\Http\Controllers\ChatController::class, 'getUnreadCount']);
+});
+
+// Маршрут для чатов - доступен только для admin, coordinator и partner
+Route::get('/chats', [\App\Http\Controllers\ChatController::class, 'index'])
+    ->middleware(['auth', 'check.chat.access'])
+    ->name('chats.index');
+
+// API маршруты для чатов с проверкой доступа
+Route::middleware(['auth', 'check.chat.access'])->prefix('api')->group(function () {
+    // Получить список контактов
+    Route::get('/contacts', [\App\Http\Controllers\ChatController::class, 'getContacts']);
+
+    // Получить сообщения чата
+    Route::get('/chats/{id}/messages', [\App\Http\Controllers\ChatController::class, 'getMessages']);
+    
+    // Получить новые сообщения после указанного ID
+    Route::get('/chats/{id}/new-messages', [\App\Http\Controllers\ChatController::class, 'getNewMessages']);
+
+    // Отправить сообщение
+    Route::post('/chats/{id}/messages', [\App\Http\Controllers\ChatController::class, 'sendMessage']);
+    
+    // Получить количество непрочитанных сообщений
+    Route::get('/messages/unread-count', [\App\Http\Controllers\ChatController::class, 'getUnreadCount']);
+    
+    // Маршруты для групповых чатов
+    Route::get('/chat-groups', [\App\Http\Controllers\ChatController::class, 'getChatGroups']);
+    Route::post('/chat-groups', [\App\Http\Controllers\ChatController::class, 'createChatGroup']);
+    Route::get('/chat-groups/{id}', [\App\Http\Controllers\ChatController::class, 'getChatGroup']);
+    Route::put('/chat-groups/{id}', [\App\Http\Controllers\ChatController::class, 'updateChatGroup']);
+    Route::delete('/chat-groups/{id}', [\App\Http\Controllers\ChatController::class, 'deleteChatGroup']);
+    
+    // Управление участниками группы
+    Route::post('/chat-groups/{id}/users', [\App\Http\Controllers\ChatController::class, 'addChatGroupUser']);
+    Route::delete('/chat-groups/{id}/users/{user_id}', [\App\Http\Controllers\ChatController::class, 'removeChatGroupUser']);
+    
+    // Сообщения в групповом чате
+    Route::get('/chat-groups/{id}/messages', [\App\Http\Controllers\ChatController::class, 'getGroupMessages']);
+    Route::post('/chat-groups/{id}/messages', [\App\Http\Controllers\ChatController::class, 'sendGroupMessage']);
+    Route::get('/chat-groups/{id}/new-messages', [\App\Http\Controllers\ChatController::class, 'getNewGroupMessages']);
+    
+    // Поиск по сообщениям
+    Route::get('/messages/search', [\App\Http\Controllers\ChatController::class, 'searchMessages']);
+});
+
+// Чаты - доступны только для авторизованных пользователей
+Route::middleware(['auth', 'update.last.seen'])->group(function () {
+    // Маршрут для просмотра чатов
+    Route::get('/chats', [ChatController::class, 'index'])->name('chats');
+});
+
+// Маршрут для чата
+Route::get('/chat', [ChatController::class, 'index'])->name('chat')->middleware(['auth', 'check.chat.access']);
+
+// Маршруты для чата с доступом новым ролям
+Route::middleware(['auth'])->group(function () {
+    // Чат
+    Route::get('/chats', [ChatController::class, 'index'])->name('chats.index');
+    
+    // Маршруты для API чата (доступны для всех ролей с разрешенным доступом)
+    Route::prefix('api')->group(function () {
+        Route::get('/contacts', [ChatController::class, 'getContacts']);
+        Route::get('/chats/{id}/messages', [ChatController::class, 'getMessages']);
+        Route::get('/chats/{id}/new-messages', [ChatController::class, 'getNewMessages']);
+        Route::post('/chats/{id}/messages', [ChatController::class, 'sendMessage']);
+        Route::get('/chats/check-new-messages', [ChatController::class, 'checkNewMessagesInAllChats']);
+        
+        // Групповые чаты
+        Route::get('/chat-groups', [ChatController::class, 'getChatGroups']);
+        Route::post('/chat-groups', [ChatController::class, 'createChatGroup']);
+        Route::get('/chat-groups/{id}', [ChatController::class, 'getChatGroup']);
+        Route::get('/chat-groups/{id}/messages', [ChatController::class, 'getGroupMessages']);
+        Route::get('/chat-groups/{id}/new-messages', [ChatController::class, 'getNewGroupMessages']);
+        Route::post('/chat-groups/{id}/messages', [ChatController::class, 'sendGroupMessage']);
+    });
+});
+
+// Маршруты для чата - доступны только для авторизованных пользователей
+Route::middleware(['auth', 'update.last.seen'])->group(function () {
+    // Основной маршрут чата
+    Route::get('/chats', [ChatController::class, 'index'])->name('chats.index');
+    
+    // API маршруты для чата (доступны для всех ролей с разрешенным доступом)
+    Route::prefix('api')->group(function () {
+        // Личные чаты
+        Route::get('/contacts', [ChatController::class, 'getContacts']);
+        Route::get('/chats/{id}/messages', [ChatController::class, 'getMessages']);
+        Route::get('/chats/{id}/new-messages', [ChatController::class, 'getNewMessages']);
+        Route::post('/chats/{id}/messages', [ChatController::class, 'sendMessage']);
+        Route::get('/chats/check-new-messages', [ChatController::class, 'checkNewMessagesInAllChats']);
+        
+        // Групповые чаты
+        Route::get('/chat-groups', [ChatController::class, 'getChatGroups']);
+        Route::post('/chat-groups', [ChatController::class, 'createChatGroup']);
+        Route::get('/chat-groups/{id}', [ChatController::class, 'getChatGroup']);
+        Route::get('/chat-groups/{id}/messages', [ChatController::class, 'getGroupMessages']);
+        Route::get('/chat-groups/{id}/new-messages', [ChatController::class, 'getNewGroupMessages']);
+        Route::post('/chat-groups/{id}/messages', [ChatController::class, 'sendGroupMessage']);
+    });
+});

@@ -26,7 +26,9 @@
             </li>
             <li>
                 <button onclick="location.href='{{ url('/chats') }}'">
-                    <img src="/storage/icon/chat.svg" alt=""> <span>Ваши чаты</span>
+                    <img src="/storage/icon/chat.svg" alt="">   @if(Auth::user()->unreadMessagesCount() > 0)
+                    <span class="badge bg-danger rounded-pill">{{ Auth::user()->unreadMessagesCount() }}</span>
+                @endif <span>Ваши чаты</span>
                 </button>
             </li>
         @else
@@ -63,6 +65,11 @@
         </li>
     </div>
 </div>
+
+<div id="chat-notification-container">
+    <!-- Здесь будут появляться уведомления чата -->
+</div>
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Получаем текущий URL

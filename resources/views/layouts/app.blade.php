@@ -19,13 +19,11 @@
     
         'resources/js/bootstrap.js',
         'resources/js/modal.js',
-        'resources/js/notification.js',
+
         'resources/js/success.js',
         'resources/js/mask.js',
-        'resources/js/chat-utils.js',
-        'resources/js/message-actions.js',
-        'resources/js/emoji-picker.js',
-        'resources/js/chat.js',
+
+
       
     ])
 
@@ -125,6 +123,20 @@
     <div id="loading-screen">
         <img src="/storage/icon/fool_logo.svg" alt="Loading">
     </div>
+     <script>
+        window.addEventListener('load', () => {
+    const loadingScreen = document.getElementById('loading-screen');
+    const content = document.getElementById('content');
+    setTimeout(() => {
+        loadingScreen.classList.add('hidden'); // Применяем класс для анимации исчезновения
+        document.body.style.overflow = 'auto'; // Включаем прокрутку
+        setTimeout(() => {
+            loadingScreen.style.display = 'none'; // Полностью убираем загрузку после анимации
+            content.style.opacity = '1'; // Плавно показываем содержимое (контент уже анимируется в CSS)
+        }, 1000); // Длительность анимации исчезновения (совпадает с fadeOut)
+    }, 1000); // Задержка до начала исчезновения
+});
+    </script>
     @if (session('success'))
         <div id="success-message" class="success-message">
             {{ session('success') }}
@@ -137,7 +149,7 @@
     @endif
     <div id="messages"></div>
 
-    <main class="py-4">
+    <main >
         
         @yield('content')
         @include('layouts/mobponel')

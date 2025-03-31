@@ -4,72 +4,143 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-/**
- * @property int $id
- * @property int $sender_id
- * @property int $chat_id
- * @property int|null $receiver_id
- * @property string $message
- * @property bool $is_read
- * @property \DateTime|null $read_at
- * @property bool $is_pinned
- * @property bool $is_system
- * @property string $message_type
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\User $sender
- * @property-read string $sender_name
- */
 class Message extends Model
 {
     use HasFactory;
 
+    /**
+     * Атрибуты, которые можно массово назначать.
+     *
+     * @var array
+     */
     protected $fillable = [
         'sender_id',
-        'chat_id',
-        'receiver_id',
-        'message',
-        'is_read',
-        'read_at',
-        'is_pinned',
-        'is_system',
-        'message_type',
+        'receiver_id', // Изменено с recipient_id на receiver_id, чтобы соответствовать имени в БД
+        'content',
         'attachments',
-        'file_path',
-        'delivered_at'
-    ];
-
-    protected $casts = [
-        'is_read' => 'boolean',
-        'read_at' => 'datetime',
-        'is_pinned' => 'boolean',
-        'is_system' => 'boolean',
-        'attachments' => 'array',
-        'delivered_at' => 'datetime'
+        'read_at',
     ];
 
     /**
-     * Get the sender of this message.
+     * Атрибуты, которые должны быть приведены к типам.
+     *
+     * @var array
      */
-    public function sender()
+    protected $casts = [
+        'read_at' => 'datetime',
+    ];
+
+    /**
+     * Получить отправителя сообщения.
+     */
+    public function sender(): BelongsTo
     {
         return $this->belongsTo(User::class, 'sender_id');
     }
 
     /**
-     * Get the receiver of this message.
+     * Получить получателя сообщения.
      */
-    public function receiver()
+    public function receiver(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'receiver_id');
+        return $this->belongsTo(User::class, 'receiver_id'); // Изменено с recipient_id на receiver_id
     }
 
     /**
-     * Get the chat this message belongs to.
+     * Группа, в которой было отправлено сообщение (может быть NULL для личных сообщений)
      */
-    public function chat()
+    public function chatGroup()
     {
-        return $this->belongsTo(Chat::class);
+        return $this->belongsTo(ChatGroup::class);
+    }
+
+    /**
+     * Получить сообщения группового чата
+     */
+    public static function inChatGroup($chatGroupId)
+    {
+        return static::where('chat_group_id', $chatGroupId)
+                    ->orderBy('created_at', 'asc');
+    }
+
+    /**
+     * Проверяет, относится ли сообщение к групповому чату
+     */
+    public function isGroupMessage()
+    {
+        return !is_null($this->chat_group_id);
+    }
+
+    /**
+     * Проверить, прочитано ли сообщение.
+     *
+     * @return bool
+     */
+    public function isRead(): bool
+    {
+        return $this->read_at !== null;
+    }
+
+    /**
+     * Отметить сообщение как прочитанное.
+     *
+     * @return void
+     */
+    public function markAsRead(): void
+    {
+        if (!$this->isRead()) {
+            $this->update(['read_at' => now()]);
+        }
+    }
+
+    /**
+     * Получить сообщения между двумя пользователями.
+     *
+     * @param int $user1Id
+     * @param int $user2Id
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public static function betweenUsers($user1Id, $user2Id)
+    {
+        return static::where(function ($query) use ($user1Id, $user2Id) {
+                $query->where('sender_id', $user1Id)
+                    ->where('receiver_id', $user2Id);
+            })->orWhere(function ($query) use ($user1Id, $user2Id) {
+                $query->where('sender_id', $user2Id)
+                    ->where('receiver_id', $user1Id);
+            })
+            ->whereNull('chat_group_id') // Только личные сообщения
+            ->orderBy('created_at', 'asc');
+    }
+
+    /**
+     * Получить последнее сообщение между двумя пользователями
+     *
+     * @param int $user1Id
+     * @param int $user2Id
+     * @return Message|null
+     */
+    public static function lastBetweenUsers($user1Id, $user2Id)
+    {
+        return static::betweenUsers($user1Id, $user2Id)
+            ->latest()
+            ->first();
+    }
+
+    /**
+     * Получить количество непрочитанных сообщений от определенного пользователя
+     *
+     * @param int $fromUserId Отправитель
+     * @param int $toUserId Получатель
+     * @return int
+     */
+    public static function unreadCountBetweenUsers($fromUserId, $toUserId)
+    {
+        return static::where('sender_id', $fromUserId)
+            ->where('receiver_id', $toUserId)
+            ->whereNull('read_at')
+            ->count();
     }
 }

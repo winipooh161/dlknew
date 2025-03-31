@@ -82,9 +82,7 @@
                                         </a>
                                     @endif
                                     <!-- Изменяем ссылку на чат: используем ID чата сделки, полученный через связь $dealItem->chat -->
-                                    <a href="{{ url('/chats?active_chat=' . ($dealItem->chat ? $dealItem->chat->id : '')) }}" onclick="window.location.href=this.href;">
-                                        <img src="/storage/icon/chat.svg" alt="Чат">
-                                    </a>
+                                
                                     <a href="{{ $dealItem->link ? url($dealItem->link) : '#' }}">
                                         <img src="/storage/icon/brif.svg" alt="Бриф">
                                     </a>
@@ -168,10 +166,7 @@
                                                 @php
                                                     // Убираем переменную $groupChat
                                                 @endphp
-                                                <a href="{{ url('/chats?active_chat=' . ($dealItem->chat ? $dealItem->chat->id : '')) }}" onclick="window.location.href=this.href;">
-                                                    <img src="/storage/icon/chat.svg" alt="Чат">
-                                                    <div class="icon">Чат</div>
-                                                </a>
+                                            
                                             </li>
                                             <li>
                                                 @if (in_array(Auth::user()->status, ['coordinator', 'admin', 'partner']))

@@ -11,9 +11,7 @@ class FirebaseServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->mergeConfigFrom(
-            __DIR__.'/../../config/firebase.php', 'firebase'
-        );
+        // Чат и Firebase удалены – провайдер удалён
     }
 
     /**
@@ -21,8 +19,6 @@ class FirebaseServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        $this->publishes([
-            __DIR__.'/../../config/firebase.php' => config_path('firebase.php'),
-        ], 'firebase-config');
+        // Чат и Firebase удалены – провайдер удалён
     }
 }
